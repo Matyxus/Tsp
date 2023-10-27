@@ -1,0 +1,7 @@
+name = "Tsp"
+uuid = "09053e15-c1f7-4015-bef6-964af51ddaf7"
+authors = ["svadlmat"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.9"
