@@ -2,5 +2,7 @@ using Tsp
 using Test
 
 @testset "Tsp.jl" begin
-    # Write your tests here.
+    @testset "InverseSequence" begin
+        inverse::InverseSequence = InverseSequence()
+    end
 end

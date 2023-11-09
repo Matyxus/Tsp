@@ -3,5 +3,13 @@ uuid = "09053e15-c1f7-4015-bef6-964af51ddaf7"
 authors = ["svadlmat"]
 version = "1.0.0-DEV"
 
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+TSPLIB = "b1c258e7-59ae-4b06-a547-f10871db1548"
+
 [compat]
 julia = "1.9"

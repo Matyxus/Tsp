@@ -1,0 +1,19 @@
+{   
+    "settings" : {
+        "seed": 42,
+        "max_iter": 30000
+    },
+    "algorithm": {
+        "name": "SimulatedAnnealing",
+        "representation": "Sequence",
+        "params": {
+            "temperature": 10000,
+            "cooling_rate": 0.003,
+            "init": "random",
+            "mutation": {
+                "name": "swap_city",
+                "chance": 1.0
+            }
+        }
+    }
+}

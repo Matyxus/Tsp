@@ -1,0 +1,12 @@
+{   
+    "settings" : {
+        "seed": 42,
+        "max_iter": 30000
+    },
+    "algorithm": {
+        "name": "CompleteEnumeration",
+        "params": {
+            "init": "random"
+        }
+    }
+}
