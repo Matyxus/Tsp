@@ -1,5 +1,6 @@
 import TSPLIB
 import Random.seed!
+import Dates: format, now
 using BenchmarkTools
 
 mutable struct Solver
@@ -10,8 +11,23 @@ mutable struct Solver
     Solver(config::Dict, alg::Alg) = new(config, alg, Log(), 0)
 end
 
+function main(config::String, problem::String, log_name::String = "", gui::Bool = false)::Bool
+    println("Main function, got config: $(config), problem: $(problem), log: '$(log_name)', gui: $(gui)")
+    solver::Union{Solver, Nothing} = process_config(load_config(config), problem)
+    println("Successfully initialized solver -> $(!isnothing(solver))!")
+    if isnothing(solver)
+        return false
+    end
+    success, run_time = standard_run(solver)
+    println("Finished successfully: $(success), run time: $(run_time)(sec.)")
+    if !isempty(log_name)
+        save_result(log_name, prepare_data(solver, run_time, log_name))
+    end
+    return success
+end
 
-function standard_run(solver::Union{Solver, Nothing})::Bool
+
+function standard_run(solver::Union{Solver, Nothing})::Tuple{Bool, Float64}
     if isnothing(solver)
         println("Invalid solver, stopping ...")
         return false
@@ -19,16 +35,18 @@ function standard_run(solver::Union{Solver, Nothing})::Bool
     println("Starting to iterate with algorithm: $(solver.config["algorithm"]["name"]), max_iters: $(solver.config["settings"]["max_iter"])")
     # Start running algorithm
     best_dist::Float64 = Inf64
-    percent::Int64 = floor(solver.config["settings"]["max_iter"] / 100)
+    percent::Int64 = floor(solver.config["settings"]["max_iter"] / 10)
+    solution::Union{Representation, Nothing} = nothing
+    run_time::Float64 = 0.0
     while (solver.iteration != solver.config["settings"]["max_iter"]) && is_running(solver.alg)
-        solution::Representation = step(solver.alg)
+        run_time += @elapsed solution = step(solver.alg)
         # Erorr happened
         if isnothing(solution)
             println("Error received invalid solution!")
             break
         elseif distance(solution) < best_dist
             best_dist = distance(solution)
-            add_result(solver.log, solver.iteration, best_dist, convert(solution))
+            add_result(solver.log, solver.iteration, best_dist, to_sequence(solution))
         end
         solver.iteration += 1
         if (solver.iteration % percent) == 0
@@ -42,14 +60,15 @@ function standard_run(solver::Union{Solver, Nothing})::Bool
         println("Optimal solution: $(solver.alg.tsp.optimal)")
     else
         println("Erorr happend while running algorithm, exiting ...")
+        return false, run_time
     end
-    return true
+    return true, run_time
 end
 
 
 # ----------------------------- Process functions ----------------------------- 
 
-function process_config(config::Dict, problem::String)::Union{Nothing, Solver}
+function process_config(config::Union{Dict, Nothing}, problem::String)::Union{Nothing, Solver}
     println("Processing configuration file, problem: $(problem)")
     # ------------ Check config ------------ 
     # Failed to load
@@ -125,11 +144,14 @@ function check_settings(config::Dict)::Bool
     return true
 end
 
-function prepare_data(solver::Solver, run_time)::Dict
+function prepare_data(solver::Solver, run_time::Float64, name::String)::Dict
     return Dict(
         "additional_info" => Dict(
-            "run_time" => run_time,
-            "num_iter" => solver.iteration
+            "run_time" => round(run_time; digits=3),
+            "num_iter" => solver.iteration,
+            "problem" => solver.alg.tsp.name,
+            "name" => name,
+            "date" => format(now(), "Y_m_d H_M_S")
         ),
         "input_config" => solver.config,
         # Save results, from best to worst

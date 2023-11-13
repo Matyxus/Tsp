@@ -26,12 +26,13 @@ function load_config(config_name::String)::Union{Dict, Nothing}
     if !file_exists(config_path)
         return nothing
     end
-    return parsefile(config_path)
+    # Return deepcopy, so that writing into parameters doesnt effect the reference to file
+    return deepcopy(parsefile(config_path))
 end
 
 # Load log file from '/data/logs' directory
 function load_log(log_name::String)::Union{Dict, Nothing}
-    log_path::String = get_config_path(log_name)
+    log_path::String = get_log_path(log_name)
     if !file_exists(log_path)
         return nothing
     end

@@ -1,5 +1,6 @@
 Manifest.toml
 /test/Manifest.toml
+/data/logs
 .vscode
 .github/*
 

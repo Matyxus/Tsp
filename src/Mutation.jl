@@ -1,5 +1,7 @@
+# -------------------------------- Swap -------------------------------- 
+
 # Swap mutation
-function swap_city!(repr::Representation, prob::Float64 = 0.1)::Nothing
+function swap_city!(repr::Sequence, prob::Float64 = 0.1)::Nothing
     if rand() > prob
         return
     end
@@ -8,9 +10,22 @@ function swap_city!(repr::Representation, prob::Float64 = 0.1)::Nothing
     return
 end
 
+function swap_city!(repr::InverseSequence, prob::Float64 = 0.1)::Nothing
+    if rand() > prob
+        return
+    end
+    index1, index2 = rand(1:length(route(repr)), 2)
+    # Convert back to sequence represetnation
+    cities::Vector{Int64} = to_sequence(repr)
+    cities[index1], cities[index2] = cities[index2], cities[index1]
+    repr = InverseSequence(cities)
+    return
+end
+
+# -------------------------------- Rsm -------------------------------- 
 
 # RSM mutation
-function reverse_subsequence!(repr::Representation, prob::Float64 = 0.1)::Nothing
+function reverse_subsequence!(repr::Sequence, prob::Float64 = 0.1)::Nothing
     if rand() > prob
         return
     end
@@ -20,8 +35,24 @@ function reverse_subsequence!(repr::Representation, prob::Float64 = 0.1)::Nothin
     return
 end
 
+# RSM mutation
+function reverse_subsequence!(repr::InverseSequence, prob::Float64 = 0.1)::Nothing
+    if rand() > prob
+        return
+    end
+    # Convert back to sequence represetnation
+    cities::Vector{Int64} = to_sequence(repr)
+    from, to = rand(1:length(cities), 2)
+    from, to = from > to ? (to, from) : (from, to)
+    cities[from:to] = reverse(cities[from:to])
+    repr = InverseSequence(cities)
+    return
+end
+
+# -------------------------------- Psm -------------------------------- 
+
 # PSM mutation
-function partial_shuffle!(repr::Representation, prob::Float64 = 0.1, swap_chance::Float64 = 0.1)::Nothing
+function partial_shuffle!(repr::Sequence, prob::Float64 = 0.1, swap_chance::Float64 = 0.1)::Nothing
     if rand() > prob
         return
     end
@@ -32,6 +63,24 @@ function partial_shuffle!(repr::Representation, prob::Float64 = 0.1, swap_chance
             route(repr)[i], route(repr)[j] = route(repr)[j], route(repr)[i]
         end
     end
+    return
+end
+
+# PSM mutation
+function partial_shuffle!(repr::InverseSequence, prob::Float64 = 0.1, swap_chance::Float64 = 0.1)::Nothing
+    if rand() > prob
+        return
+    end
+    # Convert back to sequence represetnation
+    cities::Vector{Int64} = to_sequence(repr)
+    len::Int64 = length(cities)
+    for i in 1:length(len)
+        if rand() > swap_chance
+            j::Int64 = rand(1:len)
+            cities[i], cities[j] = cities[j], cities[i]
+        end
+    end
+    repr = InverseSequence(cities)
     return
 end
 
@@ -58,7 +107,7 @@ function check_mutation(params::Dict)::Bool
 end
 
 MUTATION_MAP::Dict{String, Function} = Dict{String, Function}(
-    "swap_city" => swap_city!,
+    "swap" => swap_city!,
     "rsm" => reverse_subsequence!,
     "psm" => partial_shuffle!
 )

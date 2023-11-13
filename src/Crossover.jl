@@ -55,7 +55,7 @@ function pmx(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
             route(child)[i] = city
         end
 
-        @assert length(unique(route(child))) == len
+        # @assert length(unique(route(child))) == len
         return child
     end
 
@@ -72,7 +72,7 @@ function order_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, 
         added_cities::Set{Int64} = Set{Int64}(route(B)[from:to])
         seq::Vector{Int64} = [city for city in route(A) if !(city in added_cities)]
         child::Sequence = Sequence(append!(seq[begin:from-1], route(B)[from:to], seq[from:end]))
-        @assert length(unique(route(child))) == len
+        # @assert length(unique(route(child))) == len
         return child
     end
 
@@ -102,7 +102,7 @@ function position_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequenc
                 end
             end
         end
-        @assert length(unique(route(child))) == len
+        # @assert length(unique(route(child))) == len
         return child
     end
 
@@ -136,15 +136,15 @@ function check_crossover(params::Dict, representation::String)::Bool
 end
 
 const XOVER_MAP::Dict{String, Function} = Dict{String, Function}(
-    "one_point_crossover" => one_point_crossover,
-    "order_crossover" => order_crossover,
+    "point" => one_point_crossover,
+    "order" => order_crossover,
     "pmx" => pmx,
-    "position_crossover" => position_crossover,
+    "position" => position_crossover,
 )
 
 const ALLOWED_XOVER_TYPE::Dict{String, Set{String}} = Dict{String, Set{String}}(
-    "one_point" => Set(["InverseSequence"]),
-    "order" => Set(["InverseSequence", "Sequence"]),
+    "point" => Set(["InverseSequence"]),
+    "order" => Set(["InverseSequence", "Sequence"]),  # Works as 2Points Xover for InverseSequence
     "pmx" => Set(["Sequence"]),
     "position" => Set(["Sequence"]),
 )

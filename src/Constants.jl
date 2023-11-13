@@ -1,5 +1,4 @@
 import JSON: print as j_print
-import Dates: format, now
 const SEP::String = Base.Filesystem.pathsep()
 # -------------------- Data directory -------------------- 
 const DATA_PATH::String = "data"
@@ -20,10 +19,9 @@ function file_exists(file_path::String; messagge::Bool = true)::Bool
 end
 
 function save_result(file_name::String, data::Dict)::Bool
-    # Move to "logs" folder and add suffix + extension
-    suffix::String =  "_" * replace(format(now(), "HH:MM:SS"), ":" => "_")
+    # Move to "logs" folder and add extension
     file_name = isempty(file_name) ? "log" : file_name
-    file_name = (LOGS_PATH * SEP * file_name * suffix * JSON_EXTENSION)
+    file_name = (LOGS_PATH * SEP * file_name * JSON_EXTENSION)
     # Checks
     if isempty(data)
         println("Cannot save empty log!")

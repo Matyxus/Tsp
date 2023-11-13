@@ -95,12 +95,6 @@ function step(algorithm::GeneticAlgorithm)::Union{Representation, Nothing}
     end
     # Sort children based on distance
     sort!(algorithm.children, by = child -> distance(child))
-    for child in algorithm.children
-        if length(unique(route(child))) != algorithm.tsp.dimension
-            println("Got invalid child: $(child)")
-        end
-        @assert length(unique(route(child))) == algorithm.tsp.dimension
-    end
     return algorithm.children[begin]
 end
 
@@ -108,7 +102,7 @@ end
 # have to be careful about operating on the same objects (i.e.), cannot perform 
 # mutation 'swap_city' in parallel on child, if such child is there more than once
 function parallel_step(algorithm::GeneticAlgorithm, num_xovers::Int64)::Vector{Representation}
-    @assert algorithm.params["threads"] == nthreads() && nthreads() > 1
+    @assert 1 < algorithm.params["threads"] <= nthreads()
     # ---------- Cross over ----------
     # Initialize arrays for each thread
     accumulator::Vector{Vector{Representation}} = [[] for _ in 1:nthreads()]

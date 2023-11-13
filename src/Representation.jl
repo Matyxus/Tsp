@@ -5,11 +5,11 @@ import TSPLIB: TSP
 abstract type Representation end
 distance(repr::Representation)::Float64 = repr.distance
 route(repr::Representation)::Vector{Int64} = repr.route
-Base.show(io::IO, repr::Representation) = println(io, "Dist: $(distance(repr)), Route: $(convert(repr))")
+Base.show(io::IO, repr::Representation) = println(io, "Dist: $(distance(repr)), Route: $(to_sequence(repr))")
 # Convert representation to sequance of cities -> vector of indexes (default representation)
-convert(::Representation)::Vector{Int64} = throw(ArgumentError("All subtypes of 'Representation' must define method 'convert' !"))
+to_sequence(::Representation)::Vector{Int64} = throw(ArgumentError("All subtypes of 'Representation' must define method 'to_sequence' !"))
 # Get lenght of route
-route_length(repr::Representation, tsp::TSP)::Float64 = calculate_distance(convert(repr), tsp)
+route_length(repr::Representation, tsp::TSP)::Float64 = calculate_distance(to_sequence(repr), tsp)
 function set_route_length(repr::Representation, tsp::TSP)::Float64
     repr.distance = route_length(repr, tsp)
     return distance(repr)
@@ -28,7 +28,7 @@ mutable struct Sequence <: Representation
     Sequence(route::Vector{Int64}) = new(route, 0)
     Sequence(route::Vector{Int64}, dist::Float64) = new(route, dist)
 end
-convert(seq::Sequence)::Vector{Int64} = seq.route
+to_sequence(seq::Sequence)::Vector{Int64} = seq.route
 
 # --------------------- InverseSequence ---------------------
 # Representation using inverse sequance to represent cities on route (provides easier operation with crossover operators etc.)
@@ -39,7 +39,7 @@ mutable struct InverseSequence <: Representation
     InverseSequence(route::Vector{Int64}, dist::Float64; transform::Bool = true) = new(transform ? get_inverse(route) : route, dist)
 end
 
-convert(inv_seq::InverseSequence)::Vector{Int64} = get_permutation(route(inv_seq))
+to_sequence(inv_seq::InverseSequence)::Vector{Int64} = get_permutation(route(inv_seq))
 
 """
     get_inverse(route::Vector{Int})::Vector{Int}
@@ -133,7 +133,7 @@ const REPRESENTATIONS::Dict{String, DataType} = Dict(
 )
 
 export Representation, Sequence, InverseSequence
-export route, convert, distance, route_length, set_route_length
+export route, to_sequence, distance, route_length, set_route_length
 export check_representation, REPRESENTATIONS
 
 

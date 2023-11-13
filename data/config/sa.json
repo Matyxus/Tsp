@@ -8,10 +8,10 @@
         "representation": "Sequence",
         "params": {
             "temperature": 10000,
-            "cooling_rate": 0.003,
+            "cooling_rate": 0.0003,
             "init": "random",
             "mutation": {
-                "name": "swap_city",
+                "name": "psm",
                 "chance": 1.0
             }
         }

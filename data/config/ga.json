@@ -5,17 +5,17 @@
     },
     "algorithm": {
         "name": "GeneticAlgorithm",
-        "representation": "Sequence",
+        "representation": "InverseSequence",
         "params": {
             "population": 100,
             "elitism": 0.05,
             "init": "nearest_neighbour",
             "crossover": {
-                "name": "pmx",
+                "name": "order",
                 "chance": 0.25
             },
             "mutation": {
-                "name": "swap_city",
+                "name": "rsm",
                 "chance": 0.25
             },
             "threads": 6
