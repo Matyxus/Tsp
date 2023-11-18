@@ -119,6 +119,12 @@ check_params(::Type{CompleteEnumeration}, params::Dict)::Bool = check_init(param
 is_running(alg::CompleteEnumeration)::Bool = alg.state.permutation[begin] <= alg.tsp.dimension
 
 
+# ------------------------ GUI ------------------------
+
+get_alg_sliders(::CompleteEnumeration)::Dict = Dict()
+update_params(alg::CompleteEnumeration, params::Dict{String, Union{Int64, Float64}})::Nothing = nothing
+
+
 export CompleteEnumeration
 
 

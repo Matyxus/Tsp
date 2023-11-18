@@ -70,7 +70,7 @@ function step(algorithm::SimulatedAnnealing)::Union{Representation, Nothing}
     else # Iteration 0 (Initialization)
         algorithm.solution = algorithm.representation(algorithm.initializer(algorithm.tsp))
         set_route_length(algorithm.solution, algorithm.tsp)
-        println("Initializing solution: $(algorithm.solution)")
+        println("Initialized solution")
     end
     return algorithm.solution
 end
@@ -91,8 +91,8 @@ function check_params(::Type{SimulatedAnnealing}, params::Dict)::Bool
     # Check temperature
     if !check_key(params, "temperature", Real)
         return false
-    elseif params["temperature"] <= 0
-        println("Temperature has to be value greater than 0, got: $(params["temperature"])")
+    elseif params["temperature"] <= 0 || params["temperature"] > 100000
+        println("Temperature has to be value greater than 0 and lower or equal to 10^5, got: $(params["temperature"])")
         return false
     # Check cooling_rate
     elseif !check_key(params, "cooling_rate", Real)
@@ -111,6 +111,22 @@ function check_params(::Type{SimulatedAnnealing}, params::Dict)::Bool
 end
 
 is_running(algorithm::SimulatedAnnealing)::Bool = (algorithm.params["temperature"] > 1)
+
+# ------------------------ GUI ------------------------
+
+
+get_alg_sliders(alg::SimulatedAnnealing)::Dict = Dict(
+    # slider name : [min, max, step, current]
+    "cooling_rate" => [0.001, 0.999, 0.001, alg.params["cooling_rate"]],
+    "temperature" => [0, 100000, 1000, alg.params["temperature"]]
+)
+
+function update_params(alg::SimulatedAnnealing, params::Dict{String, Union{Int64, Float64}})::Nothing
+    alg.params["cooling_rate"] = params["cooling_rate"]
+    alg.params["temperature"] = params["temperature"]
+    return
+end
+
 
 
 export SimulatedAnnealing

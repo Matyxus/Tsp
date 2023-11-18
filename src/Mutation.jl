@@ -18,7 +18,7 @@ function swap_city!(repr::InverseSequence, prob::Float64 = 0.1)::Nothing
     # Convert back to sequence represetnation
     cities::Vector{Int64} = to_sequence(repr)
     cities[index1], cities[index2] = cities[index2], cities[index1]
-    repr = InverseSequence(cities)
+    repr.route = get_inverse(cities)
     return
 end
 
@@ -45,7 +45,7 @@ function reverse_subsequence!(repr::InverseSequence, prob::Float64 = 0.1)::Nothi
     from, to = rand(1:length(cities), 2)
     from, to = from > to ? (to, from) : (from, to)
     cities[from:to] = reverse(cities[from:to])
-    repr = InverseSequence(cities)
+    repr.route = get_inverse(cities)
     return
 end
 
@@ -80,7 +80,7 @@ function partial_shuffle!(repr::InverseSequence, prob::Float64 = 0.1, swap_chanc
             cities[i], cities[j] = cities[j], cities[i]
         end
     end
-    repr = InverseSequence(cities)
+    repr.route = get_inverse(cities)
     return
 end
 

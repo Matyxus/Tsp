@@ -5,13 +5,13 @@
     },
     "algorithm": {
         "name": "GeneticAlgorithm",
-        "representation": "InverseSequence",
+        "representation": "Sequence",
         "params": {
             "population": 100,
             "elitism": 0.05,
-            "init": "nearest_neighbour",
+            "init": "random",
             "crossover": {
-                "name": "order",
+                "name": "pmx",
                 "chance": 0.25
             },
             "mutation": {

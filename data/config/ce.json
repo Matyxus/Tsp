@@ -1,7 +1,7 @@
 {   
     "settings" : {
         "seed": 42,
-        "max_iter": 30000
+        "max_iter": 3000000
     },
     "algorithm": {
         "name": "CompleteEnumeration",

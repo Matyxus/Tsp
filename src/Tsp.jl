@@ -1,5 +1,3 @@
-# using Revise
-
 module Tsp
 #
 include("Constants.jl")
@@ -7,9 +5,7 @@ include("Loader.jl")
 # TypeDefs of Representation
 include("Representation.jl")
 include("Log.jl")
-# --------- Vizualization --------- 
 include("Vizualization.jl")
-include("Gui.jl")
 # --------- Functions --------- 
 include("Initializations.jl")
 include("Mutation.jl")
@@ -19,11 +15,10 @@ include("Search.jl")  # Defintion of Structure's, functions for all algorithms
 include("SimulatedAnnealing.jl")
 include("GeneticAlgorithm.jl")
 include("CompleteEnumeration.jl")
-# --------- Main functin --------- 
+# --------- Main --------- 
+include("Solver.jl") 
+include("Gui.jl")
 include("Main.jl")
-# println("hello")
-
-
 
 end
 

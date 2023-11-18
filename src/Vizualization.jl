@@ -51,8 +51,6 @@ function plot_convergence(log_names::Vector{String})::Union{Plots.Plot{Plots.GRB
     return p1
 end
 
-
-
 # Plots the best found solution with distance
 function plot_solution(log_name::String)::Union{Plots.Plot{Plots.GRBackend}, Nothing}
     println("Plotting solution of log: $(log_name)")
@@ -82,7 +80,7 @@ function plot_tour(problem::Union{TSPLIB.TSP, String}, tour::Vector{Int64})::Uni
         println("Invalid cities: $(tour), indexes must be larger than 0 and at most: $(problem.dimension)")
         return nothing
     end
-    println("Plotting tour of problem: $(problem.name), $(tour)")
+    # println("Plotting tour of problem: $(problem.name), $(tour)")
     # Make first city also last, to have connection between them
     push!(tour, tour[begin])
     positions::Matrix = problem.nodes[tour, :]
@@ -91,6 +89,11 @@ function plot_tour(problem::Union{TSPLIB.TSP, String}, tour::Vector{Int64})::Uni
     pop!(tour)
     title!(p1, "Tour: $(problem.name), dist: $(floor(calculate_distance(tour, problem), digits=3))")
     return p1
+end
+
+# Saves plot as image
+function save_plot(fig::Plots.Plot{Plots.GRBackend}, file_path::String)
+    return savefig(fig, file_path)
 end
 
 
@@ -114,30 +117,7 @@ function check_log(log_name::String)::Bool
     return true
 end
 
-function plot_cities(problem::TSPLIB.TSP)::Union{Plots.Plot{Plots.GRBackend}, Nothing}
-    if iszero(problem.nodes)
-        println("Problem: $(problem.name) does not have coordinates!")
-        return nothing
-    end
-    return ;
-end
-
-function plot_connections(p1::Plots.Plot{Plots.GRBackend}, problem::TSPLIB.TSP, path::Vector{Int64})::Union{Plots.Plot{Plots.GRBackend}, Nothing}
-    println("Plotting connections: $(path)")
-
-    
-    return 
-end
-
-
-
-export plot_convergence, plot_solution, plot_tour
-
-
-
-
-
-
+export plot_convergence, plot_solution, plot_tour, save_plot
 
 
 

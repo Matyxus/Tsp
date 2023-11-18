@@ -8,13 +8,13 @@ function nearest_neighbour(tsp::TSPLIB.TSP)::Vector{Int64}
     path::Vector{Int64} = [rand(1:tsp.dimension)]
     for _ in 2:tsp.dimension
         visited[path[end]] = true
-        best_city, best_dist = (-1, typemax(Int))
+        best_city, best_dist = (-1, Inf)
         for (city, distance) in enumerate(tsp.weights[path[end], :])
             if !visited[city] && (distance < best_dist)
                 best_city, best_dist = city, distance
             end
         end
-        @assert (best_city != -1 && best_dist != typemax(Int))
+        @assert (best_city != -1 && best_dist != Inf)
         push!(path, best_city)
     end
     return path

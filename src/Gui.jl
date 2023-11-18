@@ -1,7 +1,7 @@
 using GLMakie
 
 mutable struct MyGraphics
-    sliders::Dict{String, Union{Int, Float64}} # Slider buttons (mapping label to value)
+    sliders::Dict{String, Union{Int64, Float64}} # Slider buttons (mapping label to value)
     buttons::Dict{String, Bool} # Buttons (mapping label to on/off bool)
     axis::Any  # Axis containing current best found cities sequence
     lines::Union{Any, Nothing}  # Lines containing current best found cities sequence
@@ -12,158 +12,112 @@ end
 
 mutable struct GUI
     graphics::MyGraphics
-    screen::Any
+    screen::Any # The current screen
 end
 
-export get_sliders, get_buttons, set_button_value, set_button_values, update_gui
-
-
-function GUI(params::Dict{String, Any})::GUI
+function GUI(solver::Solver)::GUI
+    println("Initializing GUI ...")
     # ------------------------- Figure --------------------------
-    figure = init_figure(params)
-
+    figure::Makie.Figure = init_figure(solver.config, get_tsp(solver.alg).name)
     # -------------------------- Grids --------------------------
     axis_grid = figure[1, 1] = GridLayout()
     button_grid = figure[2, 1:2] = GridLayout()
     slider_grid = figure[3, 1:2] = GridLayout()
     best_found_grid = figure[1, 2] = GridLayout()
-
     best_label_grid = best_found_grid[1, 1] = GridLayout()
     best_axis_grid = best_found_grid[1, 2] = GridLayout()
-
     # ------------------ Current & Best Route -------------------
-    axis, best_axis = init_axis(params, axis_grid, best_axis_grid)
-
+    axis, best_axis = init_axis(solver, axis_grid, best_axis_grid)
     # ------------------------- Sliders -------------------------
-    sliders, slider_objects = init_sliders(params, slider_grid)
-
+    sliders, slider_objects = init_sliders(solver, slider_grid)
     # ------------------------- Buttons -------------------------
     buttons, button_objects = init_buttons(button_grid)
-
     # ------------------ Button functionality -------------------
+    # Remember the order of sliders and their values
+    slider_labels::Vector{String} = append!(["Step interval"], collect(keys(get_alg_sliders(solver.alg))))
+    slider_values::Vector{Union{Int64, Float64}} = [sliders[slider_label] for slider_label in slider_labels]
     for i in eachindex(BUTTON_LABELS)
         on(button_objects[i].clicks) do click
             buttons[BUTTON_LABELS[i]] = true
-
             if BUTTON_LABELS[i] == "Default"
-                set_slider_default_values(params["algorithm"]["params"], collect(keys(params["gui"]["sliders"])), slider_objects)
-            elseif BUTTON_LABELS[i] == "Clear & Reset"
-                set_slider_default_values(params["algorithm"]["params"], collect(keys(params["gui"]["sliders"])), slider_objects)
-                clear_routes(graphics, data)
+                set_slider_default_values(slider_values, slider_objects)
             end
-            
-            # println("New value of $(BUTTON_LABELS[i]) is $(buttons[BUTTON_LABELS[i]])")
         end
     end
-
     # ------------------------- Labels --------------------------
     info_label_values = init_labels(best_label_grid)
-
     # ---------------------- Constructors -----------------------
-    sc = display(figure)
-
     graphics = MyGraphics(sliders, buttons, axis, nothing, best_axis, nothing, info_label_values)
-    GUI(graphics, sc)
+    return GUI(graphics, display(figure))
 end
 
-
-
 # ---------------------------- Init GUI -----------------------------
-function init_figure(params::Dict{String, Any})::Makie.Figure
+
+function init_figure(params::Dict{String, Any}, problem_name::String)::Makie.Figure
     set_theme!(theme_dark())
-    resolution = (params["gui"]["height"], params["gui"]["width"])
-    figure = Figure(resolution = resolution)
-
-    name_label = "Traveling Salesman - " * params["setting"]["problem_name"] * " - " * params["algorithm"]["name"]
+    resolution::Tuple = !check_gui(params) ? (WIDTH, HEIGHT) : (params["gui"]["width"], params["gui"]["height"])
+    figure::Makie.Figure = Figure(resolution = resolution)
+    name_label::String = "Traveling Salesman - " * problem_name * " - " * params["algorithm"]["name"]
     figure[0, 1:2] = Label(figure, name_label, fontsize = 30)
-
     return figure
 end
 
-function init_axis(params::Dict{String, Any}, axis_grid::Makie.GridLayout, best_axis_grid::Makie.GridLayout)::Tuple{Makie.Axis, Makie.Axis}
-    # ------------------------- City Labels -------------------------
-    city_labels = collect(keys(params["cities"]["position"]))
-    starting_city = params["cities"]["start"]
-    city_labels_without_start = [label for label in city_labels if label != starting_city]
-
+function init_axis(solver::Solver, axis_grid::Makie.GridLayout, best_axis_grid::Makie.GridLayout)::Tuple{Makie.Axis, Makie.Axis}
     # ---------------------- City Coordinates -----------------------
-    x_start = params["cities"]["position"][starting_city][1]
-    y_start = params["cities"]["position"][starting_city][2]
-
-    x_coords = [params["cities"]["position"][label][1] for label in city_labels_without_start]
-    y_coords = [params["cities"]["position"][label][2] for label in city_labels_without_start]
-
+    x_coords = get_tsp(solver.alg).nodes[:, 1]
+    y_coords = get_tsp(solver.alg).nodes[:, 2]
     # ------------------------- Axis Limits -------------------------
-    x_max = maximum([x_start; x_coords]) + AXIS_OFFSET
-    x_min = minimum([x_start; x_coords]) - AXIS_OFFSET
-
-    y_max = maximum([y_start; y_coords]) + AXIS_OFFSET
-    y_min = minimum([y_start; y_coords]) - AXIS_OFFSET
-
+    x_max = maximum(x_coords) + AXIS_OFFSET
+    x_min = minimum(x_coords) - AXIS_OFFSET
+    y_max = maximum(y_coords) + AXIS_OFFSET
+    y_min = minimum(y_coords) - AXIS_OFFSET
     # ------------------------ Current Route ------------------------
     axis = Axis(axis_grid[1, 1], title = "Current Route", xlabel = "x", ylabel = "y")
-
-    xlims!(axis, x_min, x_max)
-    ylims!(axis, y_min, y_max)
-
-    scatter!(axis, x_start, y_start, markersize = 15, color = :red)
-    scatter!(axis, x_coords, y_coords, markersize = 15, color = :blue)
-    text!(axis, Point.(x_coords .+ TEXT_OFFSET, y_coords .+ TEXT_OFFSET), text = city_labels_without_start)
-    text!(axis, Point.(x_start + TEXT_OFFSET, y_start + TEXT_OFFSET), text = starting_city)
-
+    GLMakie.xlims!(axis, x_min, x_max)
+    GLMakie.ylims!(axis, y_min, y_max)
+    GLMakie.scatter!(axis, x_coords, y_coords, markersize = 5, color = :blue)
     # ------------------------- Best Route --------------------------
     best_axis = Axis(best_axis_grid[1, 1], title = "Best route", xlabel = "x", ylabel = "y")
-
-    xlims!(best_axis, x_min, x_max)
-    ylims!(best_axis, y_min, y_max)
-
-    scatter!(best_axis, x_start, y_start, markersize = 15, color = :red)
-    scatter!(best_axis, x_coords, y_coords, markersize = 15, color = :blue)
-    text!(best_axis, Point.(x_coords .+ TEXT_OFFSET, y_coords .+ TEXT_OFFSET), text = city_labels_without_start)
-    text!(best_axis, Point.(x_start + TEXT_OFFSET, y_start + TEXT_OFFSET), text = starting_city)
-
+    GLMakie.xlims!(best_axis, x_min, x_max)
+    GLMakie.ylims!(best_axis, y_min, y_max)
+    GLMakie.scatter!(best_axis, x_coords, y_coords, markersize = 5, color = :blue)
     return axis, best_axis
 end
 
-function init_sliders(params::Dict{String, Any}, slider_grid::Makie.GridLayout)::Tuple{Dict{String, Union{Int, Float64}}, Vector{Makie.Slider}}
-    sliders_array::Array{Any} = []
-
-    for (key, value) in params["gui"]["sliders"]
-        default_value = params["algorithm"]["params"][key]
-
-        if isa(value[3], Float64)
+function init_sliders(solver::Solver, slider_grid::Makie.GridLayout)::Tuple{Dict{String, Union{Int, Float64}}, Vector{Makie.Slider}}
+    # Sliders specific to algorithm
+    sliders_array::Vector{Any} = []
+    for (key, vals) in get_alg_sliders(solver.alg)
+        # If step size is float, add format
+        if isa(vals[3], Float64)
             push!(
                 sliders_array, 
-                (label = key, range = value[1]:value[3]:value[2], startvalue = default_value, format = x -> string(round(100 * x, digits=3), " %"))
+                (label = key, range = vals[1]:vals[3]:vals[2], startvalue = vals[end], format = x -> string(round(x, digits=3)))
             )
         else
-            push!(sliders_array, (label = key, range = value[1]:value[3]:value[2], startvalue = default_value))
+            push!(sliders_array, (label = key, range = vals[1]:vals[3]:vals[2], startvalue = vals[end]))
         end
     end
-
-    slider_grid_object = SliderGrid(slider_grid[1, 1],
-        (label = "Step interval", range = 0:1:1000, startvalue=150, format = x -> string(x, " ms")),
+    # For complete enemuration we must have sleeping, otherwise the window
+    # gets updated too often
+    min_sleep::Int64 = isa(solver.alg, CompleteEnumeration) ? 1 : 0
+    # All sliders
+    slider_grid_object::Makie.SliderGrid = SliderGrid(
+        slider_grid[1, 1],
+        # Slider for the amount of sleeping time between rendering
+        (label = "Step interval", range = min_sleep:1:1000, startvalue=150, format = x -> string(x, " ms")),
         sliders_array...
     )
-
     slider_objects = slider_grid_object.sliders
-    slider_observables = [s.value for s in slider_objects]
-
-    slider_labels = append!(["Step interval"], collect(keys(params["gui"]["sliders"])))
-    sliders = Dict{String, Union{Int, Float64}}(slider_labels .=> zeros(length(slider_labels)))
-
+    slider_observables::Vector{Observable} = [s.value for s in slider_objects]
+    slider_labels::Vector{String} = append!(["Step interval"], collect(keys(get_alg_sliders(solver.alg))))
+    sliders = Dict{String, Union{Int64, Float64}}(slider_labels .=> [[150]; [val[end] for val in values(get_alg_sliders(solver.alg))]])
     # -------------------- Slider functionality ---------------------
     for i in eachindex(slider_labels)
-        if slider_labels[i] != "Step interval"
-            sliders[slider_labels[i]] = params["algorithm"]["params"][slider_labels[i]]
-        end
-
         on(slider_observables[i]) do value
-            # println("New value of $(slider_labels[i]) is $value")
             sliders[slider_labels[i]] = value
         end
     end
-
     return sliders, slider_objects
 end
 
@@ -172,27 +126,21 @@ function init_buttons(button_grid::Makie.GridLayout)::Tuple{Dict{String, Bool}, 
         Button(button_grid[1, index], label = label)
         for (index, label) in enumerate(BUTTON_LABELS)
     ]
-
     buttons = Dict{String, Bool}(
         BUTTON_LABELS .=> falses(length(BUTTON_LABELS))
     )
-
     return buttons, button_objects
 end
 
 function init_labels(best_label_grid::Makie.GridLayout)::Dict{String, Observable}
     label_values = Observable.(LABEL_STARTING_VALUES)
-    print(label_values)
-
     info_labels = [
         Label(best_label_grid[index, 1], @lift(label * string($(value))))
         for (index, (label, value)) in enumerate(zip(LABEL_LABELS, label_values))
     ]
-
     info_label_values = Dict{String, Observable}(
         LABEL_LABELS .=> label_values
     )
-
     return info_label_values
 end
 
@@ -206,73 +154,90 @@ function get_buttons(gui::GUI)::Dict{String, Bool}
     return gui.graphics.buttons
 end
 
-function set_button_value(gui::GUI, button_label::String)
-    gui.graphics.buttons[button_label] = false
+"""
+    set_button_value(gui::GUI, button_label::String, on::Bool = false)::Nothing
+
+    Sets button value to the given value (true - pressed or false - not pressed)
+
+# Arguments
+- `gui::GUI`: current struct representing GUI
+- `button_label::String`: name of the button
+- `on::Bool`: true if button is pressed, false by default
+
+`Returns` Nothing
+"""
+function set_button_value(gui::GUI, button_label::String, on::Bool = false)::Nothing
+    gui.graphics.buttons[button_label] = on
+    return
 end
 
-function set_button_values(gui::GUI)
+# Sets all buttons as not pressed
+function initialize_button_values(gui::GUI)::Nothing
     gui.graphics.buttons = Dict{String, Bool}(
         BUTTON_LABELS .=> falses(length(BUTTON_LABELS))
     )
+    return
 end
 
 # ---------------------- Button functionality -----------------------
 
-function set_slider_default_values(default_sliders::Dict{String, Any}, slider_labels::Vector{String}, sliders::Vector{Makie.Slider})
-    for i in eachindex(slider_labels)
-        set_close_to!(sliders[i + 1], default_sliders[slider_labels[i]])
+function set_slider_default_values(default_sliders::Vector{Union{Float64, Int64}}, sliders::Vector{Makie.Slider})
+    for (i, value) in enumerate(default_sliders)
+        set_close_to!(sliders[i], value)
     end
-end
-
-function clear_routes(graphics::MyGraphics, data::MyData)
-    if !isnothing(graphics.lines)
-        delete!(graphics.axis.scene, graphics.lines)
-    end
-    if !isnothing(graphics.best_lines)
-        delete!(graphics.best_axis.scene, graphics.best_lines)
-    end
-
-    graphics.lines = nothing
-    graphics.best_lines = nothing
-
-    for i in eachindex(LABEL_LABELS)
-        graphics.info_label_values[LABEL_LABELS[i]][] = LABEL_STARTING_VALUES[i]
-    end
-
-    data.best_entry = nothing
 end
 
 # --------------------------- Update GUI ----------------------------
 
-function update_route(axis::Makie.Axis, lines::Union{Makie.Lines, Nothing}, x_coords::Vector{Int}, y_coords::Vector{Int})
+function update_route(axis::Makie.Axis, lines::Union{Makie.Lines, Nothing}, x_coords::Vector{ <: Real}, y_coords::Vector{ <: Real})
     if !isnothing(lines)
         delete!(axis.scene, lines)
     end
-
     return lines!(axis, x_coords, y_coords, color = :green)
 end
 
-function update_gui(gui::GUI, log::Log)::Nothing
-    ordered_cities = split(data["best"], "-")
+function update_gui(gui::GUI, solver::Solver, current::Representation)::Nothing
+    best_solution::Union{Tuple{Int64, Float64, Vector{Int64}}, Nothing} = get_best(solver.log)
 
-    x_coords = [gui.data.cities[label][1] for label in ordered_cities]
-    y_coords = [gui.data.cities[label][2] for label in ordered_cities]
-    
-    gui.graphics.lines = update_route(gui.graphics.axis, gui.graphics.lines, x_coords, y_coords)
-
-    gui.graphics.info_label_values["Current iteration: "][] += 1
-    gui.graphics.info_label_values["Current shortest distance: "][] = round(data["distance"], 3)
-    gui.graphics.info_label_values["Current best: "][] = round(data["best"], 3)
-    
-
-    if isnothing(gui.data.best_entry) || data["distance"] < gui.data.best_entry["distance"]
-        gui.data.best_entry = data
-
+    tour::Vector{Int64} = to_sequence(current)
+    push!(tour, tour[begin])  # Add last city for connection
+    positions::Matrix = get_tsp(solver.alg).nodes[tour, :]
+    pop!(tour) # Remove last added city
+    x_coords = positions[:, 1]
+    y_coords = positions[:, 2]
+    # Update current, if its not equal to the one currently rendered
+    if isnothing(best_solution) || gui.graphics.info_label_values["Current distance: "][] != round(distance(current); digits=3)
+        gui.graphics.lines = update_route(gui.graphics.axis, gui.graphics.lines, x_coords, y_coords)
+        gui.graphics.info_label_values["Current distance: "][] = round(distance(current); digits=3)
+    end
+    gui.graphics.info_label_values["Iteration: "][] += 1
+    # Update best
+    if isnothing(best_solution) || distance(current) < best_solution[2]
         gui.graphics.best_lines = update_route(gui.graphics.best_axis, gui.graphics.best_lines, x_coords, y_coords)
-
-        gui.graphics.info_label_values["Best distance: "][] = round(data["distance"], 3)
-        gui.graphics.info_label_values["Best: "][] = round(data["best"], 3)
+        gui.graphics.info_label_values["Best distance: "][] = round(distance(current); digits=3)
     end
     return
 end
 
+# --------------------------- Utils ----------------------------
+
+function check_gui(config::Dict)::Bool
+    # Check config
+    if !check_key(config, "gui")
+        return false
+    elseif !check_key(config["gui"], "width", Int64)
+        return false
+    elseif 0 >= config["gui"]["width"]
+        println("Width of gui has to be grater than 0, got: $(config["gui"]["width"])")
+        return false
+    elseif !check_key(config["gui"], "height", Int64)
+        return false
+    elseif 0 >= config["gui"]["height"]
+        println("Height of gui has to be grater than 0, got: $(config["gui"]["height"])")
+        return false
+    end
+    return true
+end
+
+
+export GUI, update_gui

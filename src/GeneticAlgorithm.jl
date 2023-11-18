@@ -150,8 +150,8 @@ function check_params(::Type{GeneticAlgorithm}, params::Dict)::Bool
     # Check population
     if !check_key(params, "population", Int64)
         return false
-    elseif params["population"] <= 0
-        println("Population has to be value greater than 0, got: $(params["Population"])")
+    elseif params["population"] <= 0 || params["population"] > 100
+        println("Population has to be value greater than 0 and lower or eqaul to 100, got: $(params["Population"])")
         return false
     # Check elitism
     elseif !check_key(params, "elitism", Float64)
@@ -187,8 +187,25 @@ function check_threads(params::Dict)::Bool
     return true
 end
 
-
 is_running(::GeneticAlgorithm)::Bool = true
+
+# ------------------------ GUI ------------------------
+
+get_alg_sliders(alg::GeneticAlgorithm)::Dict = Dict(
+    # slider name : [min, max, step, current]
+    "population" => [0, 100, 1, alg.params["population"]],
+    "crossover" => [0, 1, 0.001, alg.params["crossover"]["chance"]], # Crosover chance
+    "elitism" => [0, 1, 0.001, alg.params["elitism"]],
+    "mutation" => [0, 1, 0.001, alg.params["crossover"]["chance"]] # Mutation chance
+)
+
+function update_params(alg::GeneticAlgorithm, params::Dict{String, Union{Int64, Float64}})::Nothing
+    alg.params["population"] = params["population"]
+    alg.params["elitism"] = params["elitism"]
+    alg.params["crossover"]["chance"] = params["crossover"]
+    alg.params["mutation"]["chance"] = params["mutation"]
+    return
+end
 
 
 export GeneticAlgorithm

@@ -5,10 +5,12 @@ abstract type Alg{T <: Representation} end
 get_params(alg::Alg)::Dict = alg.params 
 get_tsp(alg::Alg)::TSPLIB.TSP = alg.tsp
 get_representation(alg::Alg)::Type{T} where {T <: Representation} = alg.representation
+get_alg_sliders(::Alg)::Dict = throw(ArgumentError("All subtypes of 'Alg' must define method 'get_alg_sliders' !"))
 #  -----------------------  Functions, defined for all Algorithms ----------------------- 
-initialize(::Type{Alg}, params::Dict, tsp::TSPLIB.TSP)::Union{Alg, Nothing} = throw(ArgumentError("All subtypes of 'Alg' must define method 'initialize' !"))
+initialize(::Type{Alg}, params::Dict, tsp::TSPLIB.TSP)::Union{Nothing, Alg} = throw(ArgumentError("All subtypes of 'Alg' must define method 'initialize' !"))
 is_running(::Alg)::Bool = throw(ArgumentError("All subtypes of 'Alg' must define method 'is_running' !"))
 step(::Alg)::Union{Representation, Nothing} = throw(ArgumentError("All subtypes of 'Alg' must define method 'step' !"))
+update_params(::Alg, params::Dict{String, Union{Int64, Float64}})::Nothing = throw(ArgumentError("All subtypes of 'Alg' must define method 'update_params' !"))
 # ----------------------- Parameters ----------------------- 
 # Utils, checks for basic parameters in algorithm
 check_params(::Type{Alg}, params::Dict)::Bool = throw(ArgumentError("All subtypes of 'Alg' must define method 'check_algorithm' !"))

@@ -1,4 +1,3 @@
-import JSON: print as j_print
 const SEP::String = Base.Filesystem.pathsep()
 # -------------------- Data directory -------------------- 
 const DATA_PATH::String = "data"
@@ -9,6 +8,17 @@ const PROBLEMS_PATH::String = DATA_PATH * SEP * "problems"
 const JSON_EXTENSION::String = ".json"
 const TSPLIB_EXTENSION::String = ".tsplib"
 # -------------------- File functions -------------------- 
+"""
+    file_exists(file_path::String; messagge::Bool = true)::Bool
+
+    Checkes whether file exists.
+
+# Arguments
+- `file_path::String`: path to file
+- `messagge::Bool`: optional parameter, prints messagge about file not existing, true by default
+
+`Returns` True if file exists, false otherwise.
+"""
 function file_exists(file_path::String; messagge::Bool = true)::Bool
     exists::Bool = isfile(file_path)
     if messagge && !exists
@@ -18,26 +28,7 @@ function file_exists(file_path::String; messagge::Bool = true)::Bool
     return exists
 end
 
-function save_result(file_name::String, data::Dict)::Bool
-    # Move to "logs" folder and add extension
-    file_name = isempty(file_name) ? "log" : file_name
-    file_name = (LOGS_PATH * SEP * file_name * JSON_EXTENSION)
-    # Checks
-    if isempty(data)
-        println("Cannot save empty log!")
-        return false
-    elseif file_exists(file_name; messagge=false)
-        println("File: '$(file_name)' already exists!")
-        return false
-    end
-    println("Saving log to file: '$(file_name)'")
-    # Save data to file
-    open(file_name, "w") do f
-        j_print(f, data, 2)
-    end
-    return true 
-end
-
+# Functions returning full path to file (from its name) corresponding to type
 get_problem_path(problem_name::String)::String = (PROBLEMS_PATH * SEP * problem_name * TSPLIB_EXTENSION)
 get_config_path(config_name::String)::String = (CONFIG_PATH * SEP * config_name * JSON_EXTENSION)
 get_log_path(log_name::String)::String = (LOGS_PATH * SEP * log_name * JSON_EXTENSION)
@@ -57,4 +48,29 @@ function check_key(mapping::Dict, key::String, type::Type = String)::Bool
     return true
 end
 
-export file_exists, get_problem_path, get_config_path, check_key, save_result
+# ---------------------- GUI ----------------------
+
+const BUTTON_LABELS::Vector{String} = [
+    "Play", 
+    "Pause", 
+    "Step", 
+    "Default",
+    "Exit"
+]
+
+const LABEL_LABELS::Vector{String} = [
+    "Iteration: ", 
+    "Current distance: ", 
+    "Best distance: "
+]
+
+const LABEL_STARTING_VALUES::Vector{Union{Int64, Float64}} = [
+    0,
+    0.0,
+    0.0
+]
+const WIDTH::Int64 = 1280
+const HEIGHT::Int64 = 800
+const AXIS_OFFSET::Int64 = 2
+const TEXT_OFFSET::Float64 = 0.1
+
