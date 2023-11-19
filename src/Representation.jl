@@ -1,5 +1,3 @@
-import TSPLIB: TSP
-
 # --------------------- Representation ---------------------
 # Super type of all different representations
 abstract type Representation end
@@ -15,6 +13,7 @@ function set_route_length(repr::Representation, tsp::TSP)::Float64
     return distance(repr)
 end
 
+# Calculate the tour length over cities
 calculate_distance(route::Vector{Int64}, tsp::TSP)::Float64 = (
     sum([tsp.weights[route[i], route[i+1]] for i in 1:(tsp.dimension-1)]) + 
     tsp.weights[route[end], route[begin]]
@@ -31,7 +30,8 @@ end
 to_sequence(seq::Sequence)::Vector{Int64} = seq.route
 
 # --------------------- InverseSequence ---------------------
-# Representation using inverse sequance to represent cities on route (provides easier operation with crossover operators etc.)
+# Representation using inverse sequance to represent cities on route (provides easier operation with crossover operators)
+# https://www.researchgate.net/publication/245746380_Genetic_Algorithm_Solution_of_the_TSP_Avoiding_Special_Crossover_and_Mutation
 mutable struct InverseSequence <: Representation
     route::Vector{Int64}
     distance::Float64
@@ -115,7 +115,7 @@ function get_permutation(inverse::Vector{Int64})::Vector{Int64}
 end
 
 # --------------------------- Utils --------------------------- 
-
+# Check if the representation was given correctly in configuration file
 function check_representation(params::Dict)::Bool
     # Check key existence and type
     if !check_key(params, "representation")
@@ -127,14 +127,8 @@ function check_representation(params::Dict)::Bool
     return true
 end
 
+# Mapping of representation name to structure
 const REPRESENTATIONS::Dict{String, DataType} = Dict(
     "Sequence" => Sequence,
     "InverseSequence" => InverseSequence
 )
-
-export Representation, Sequence, InverseSequence
-export route, to_sequence, distance, route_length, set_route_length
-export check_representation, REPRESENTATIONS
-
-
-

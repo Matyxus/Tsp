@@ -1,4 +1,4 @@
-import TSPLIB
+# --------------------------------------- Main functions --------------------------------------- 
 
 function main(config::String, problem::String, log_name::String = "", gui::Bool = false)::Bool
     println("Main function, got config: $(config), problem: $(problem), log: '$(log_name)', gui: $(gui)")

@@ -1,19 +1,17 @@
 # ---------------------------- InverseSequence Representation ----------------------------
 """
-    crossover(parentA::Route, parentB::Route, chance::Float64)::Pair{Route, Route}
+    one_point_crossover(parentA::InverseSequence, parentB::InverseSequence)::Tuple{InverseSequence, InverseSequence}
 
     Performs crossover operation, by using inverse sequence of city id's
     and randomly selected index, parentA[1:index] is combined with 
     parentB[index+1:end] to create new route (another using parentB first).
 
 # Arguments
-- `parentA::Route`: Route class representing first parent 'gene'
-- `parentB::Route`: Route class representing second parent 'gene'
+- `parentA::InverseSequence`: First parent - solution
+- `parentB::InverseSequence`: Second parent - solution
 
-`Returns` Pair, containing (parentA, parentB) if chance to crossover does not trigger, else two new Routes.
+`Returns` Tuple containing newly generated solutions (in InverseSequence representation)
 """
-
-
 function one_point_crossover(parentA::InverseSequence, parentB::InverseSequence)::Tuple{InverseSequence, InverseSequence}
     crossover_point::Int64 = rand(1:(length(route(parentA))-1))
     return (
@@ -22,13 +20,26 @@ function one_point_crossover(parentA::InverseSequence, parentB::InverseSequence)
     )
 end
 
+"""
+    order_crossover(parentA::InverseSequence, parentB::InverseSequence)::Tuple{InverseSequence, InverseSequence}
+
+    Performs crossover operation, by using inverse sequence of city id's
+    and randomly selects two indexes, parentA[from:to] is combined with 
+    parentB[begin:from-1] and parentB[to+1:end] to create new route (another using parentB first).
+
+# Arguments
+- `parentA::InverseSequence`: First parent - solution
+- `parentB::InverseSequence`: Second parent - solution
+
+`Returns` Tuple containing newly generated solutions (in InverseSequence representation)
+"""
 function order_crossover(parentA::InverseSequence, parentB::InverseSequence)::Tuple{InverseSequence, InverseSequence}
     len::Int64 = length(route(parentA))
     from, to = rand(1:len, 2)
     from, to = from > to ? (to, from) : (from, to)
     return ( # 1st part, middle, last part
-        InverseSequence(append!(route(parentB)[1:from-1], route(parentA)[from:to], route(parentB)[to+1:end]); transform=false),
-        InverseSequence(append!(route(parentA)[1:from-1], route(parentB)[from:to], route(parentA)[to+1:end]); transform=false),
+        InverseSequence(append!(route(parentB)[begin:from-1], route(parentA)[from:to], route(parentB)[to+1:end]); transform=false),
+        InverseSequence(append!(route(parentA)[begin:from-1], route(parentB)[from:to], route(parentA)[to+1:end]); transform=false),
     )
 end
 
@@ -36,6 +47,21 @@ end
 # ---------------------------- Sequence Representation ----------------------------
 
 
+"""
+    pmx(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
+
+    Performs crossover operation, by selecting two indexes then copies
+    parentA[from:to] to the new solution, the rest is filled from parentB.
+    The absolute position of cities in parentB is kept as close as possible in 
+    the new solution. This is done by creating mapping between parentA[from:to] and parentB[from:to].
+    Similary for parentB.
+
+# Arguments
+- `parentA::InverseSequence`: First parent - solution
+- `parentB::InverseSequence`: Second parent - solution
+
+`Returns` Tuple containing newly generated solutions (in Sequence representation)
+"""
 function pmx(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
     len::Int64 = length(route(parentA))
     from, to = rand(1:len, 2)
@@ -49,20 +75,31 @@ function pmx(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
         # Fill the missing cities form parents
         for i in vcat(1:from-1, to+1:len)
             city::Int64 = route(A)[i]
+            # City can have multiple mappings, iterate till its not present
             while (haskey(mapping, city))
                 city = mapping[city]
             end
             route(child)[i] = city
         end
-
         # @assert length(unique(route(child))) == len
         return child
     end
-
     return generate_child(parentA, parentB), generate_child(parentB, parentA)
 end
 
+"""
+    order_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
 
+    Performs crossover operation, by selecting two indexes then copies
+    parentA[from:to] to the new solution, the rest is then filled with parentB.
+    Similary for parentB.
+
+# Arguments
+- `parentA::InverseSequence`: First parent - solution
+- `parentB::InverseSequence`: Second parent - solution
+
+`Returns` Tuple containing newly generated solutions (in Sequence representation)
+"""
 function order_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
     len::Int64 = length(route(parentA))
     from, to = rand(1:len, 2)
@@ -79,8 +116,19 @@ function order_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, 
     return generate_child(parentA, parentB), generate_child(parentB, parentA)
 end
 
+"""
+    position_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
 
-# position-crossover
+    Performs crossover operation, by randomly selecting indexes from parentA, which are then
+    copied to the new solution (at same position). The rest is then filled from parentB, again
+    the position of cities is kept. Similary for parentB.
+
+# Arguments
+- `parentA::InverseSequence`: First parent - solution
+- `parentB::InverseSequence`: Second parent - solution
+
+`Returns` Tuple containing newly generated solutions (in Sequence representation)
+"""
 function position_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequence, Sequence}
     len::Int64 = length(route(parentA))
 
@@ -98,6 +146,7 @@ function position_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequenc
             for city in route(B)
                 if !added_cities[city]
                     route(child)[index] = city
+                    # Move index to next missing in child
                     index = findnext(item -> item == 0, route(child), index)
                 end
             end
@@ -110,7 +159,7 @@ function position_crossover(parentA::Sequence, parentB::Sequence)::Tuple{Sequenc
 end
 
 # --------------------------- Utils --------------------------- 
-
+# Check if crossover is in correct format and can be used with given representation
 function check_crossover(params::Dict, representation::String)::Bool
     # Check key existence and type
     if !check_key(params, "crossover", Dict)
@@ -135,6 +184,7 @@ function check_crossover(params::Dict, representation::String)::Bool
     return true
 end
 
+# Mapping of crossover names to functions
 const XOVER_MAP::Dict{String, Function} = Dict{String, Function}(
     "point" => one_point_crossover,
     "order" => order_crossover,
@@ -142,13 +192,10 @@ const XOVER_MAP::Dict{String, Function} = Dict{String, Function}(
     "position" => position_crossover,
 )
 
+# Mapping of crossover names to allowed representations (they can be used with)
 const ALLOWED_XOVER_TYPE::Dict{String, Set{String}} = Dict{String, Set{String}}(
     "point" => Set(["InverseSequence"]),
     "order" => Set(["InverseSequence", "Sequence"]),  # Works as 2Points Xover for InverseSequence
     "pmx" => Set(["Sequence"]),
     "position" => Set(["Sequence"]),
 )
-
-export one_point_crossover, position_crossover, pmx, order_crossover
-export check_crossover, XOVER_MAP, ALLOWED_XOVER_TYPE
-

@@ -1,11 +1,11 @@
 module Tsp
-#
+# Files without dependencies
 include("Constants.jl")
 include("Loader.jl")
-# TypeDefs of Representation
+# Structures
 include("Representation.jl")
 include("Log.jl")
-include("Vizualization.jl")
+include("Visualization.jl")
 # --------- Functions --------- 
 include("Initializations.jl")
 include("Mutation.jl")

@@ -1,4 +1,4 @@
-# Structure used for saving state of permutation
+# Structure used for saving the current state of permutation
 mutable struct State
     permutation::Vector{Int64}
     visited::Vector{Bool}
@@ -10,7 +10,7 @@ mutable struct State
 end
 
 # Reset to previous state
-function go_back(state::State, tsp::TSPLIB.TSP)::Nothing
+function go_back(state::State, tsp::TSP)::Nothing
     # Subtract distance from previous city
     state.distance -= tsp.weights[
         state.permutation[end], 
@@ -27,7 +27,7 @@ end
 mutable struct CompleteEnumeration{T} <: Alg{T}
     # Settings
     params::Dict
-    tsp::TSPLIB.TSP
+    tsp::TSP
     representation::Type{T}
     state::State
     # Functions
@@ -35,17 +35,14 @@ mutable struct CompleteEnumeration{T} <: Alg{T}
     # Results
     solution::Union{T, Nothing}
 
-    function CompleteEnumeration(params::Dict, tsp::TSPLIB.TSP, initializer::Function = random_init)
-        println("Initializing 'CompleteEnumeration' with params: $(params)")
-        println("tsp: $(tsp.name), initializer: $(nameof(initializer))")
+    function CompleteEnumeration(params::Dict, tsp::TSP, initializer::Function = random_init)
+        println("Initializing 'CompleteEnumeration' ...")
         new{Sequence}(params, tsp, Sequence, State(tsp.dimension), initializer, nothing)
     end
 end
 
 
-function initialize(::Type{CompleteEnumeration}, params::Dict, tsp::TSPLIB.TSP)::Union{Nothing, CompleteEnumeration}
-    @assert !isnothing(tsp)
-    @assert !isnothing(params)
+function initialize(::Type{CompleteEnumeration}, params::Dict, tsp::TSP)::Union{Nothing, CompleteEnumeration}
     # Check given parameters
     if !check_key(params, "params", Dict)
         return nothing
@@ -60,20 +57,16 @@ end
 
 
 function step(alg::CompleteEnumeration)::Union{Representation, Nothing}
-    # println("Performing step on algorithm: 'CompleteEnumeration'")
     # Found all permutations starting with first city of state, change first city to next one
     if alg.state.seq_length == 0
-        # println("Found all permutation which start with: $(alg.state.permutation[begin])")
         alg.state = State(alg.state.permutation[begin] + 1, alg.tsp.dimension)
     # Initialize solution
     elseif isnothing(alg.solution)
         alg.solution = alg.representation(alg.initializer(alg.tsp))
         set_route_length(alg.solution, alg.tsp)
-        # println("Initializing solution for 'CompleteEnumeration': $(alg.solution)")
     end
     # Search trough permutation, return first valid, record state
     if is_running(alg)
-        # println("Looking trough possible permutations, dist: $(alg.state.distance), current: $(alg.state.permutation)")
         current::Int64 = alg.state.permutation[end]
         alg.state.visited[current] = true
         # Went pass the best found distance, go back
@@ -81,8 +74,6 @@ function step(alg::CompleteEnumeration)::Union{Representation, Nothing}
             go_back(alg.state, alg.tsp)
         # Found valid permutation, check for best distance
         elseif alg.state.seq_length == alg.tsp.dimension
-            # println("Reached full permutation size, comparing distances: $(alg.state.distance) vs $(distance(alg.solution))")
-            # println("Permutation: $(alg.state.permutation)")
             # Add distance between last and first city
             alg.state.distance += alg.tsp.weights[alg.state.permutation[begin], current]
             if alg.state.distance < distance(alg.solution)
@@ -118,9 +109,7 @@ check_params(::Type{CompleteEnumeration}, params::Dict)::Bool = check_init(param
 # We didnt explore all permutations
 is_running(alg::CompleteEnumeration)::Bool = alg.state.permutation[begin] <= alg.tsp.dimension
 
-
 # ------------------------ GUI ------------------------
-
 get_alg_sliders(::CompleteEnumeration)::Dict = Dict()
 update_params(alg::CompleteEnumeration, params::Dict{String, Union{Int64, Float64}})::Nothing = nothing
 

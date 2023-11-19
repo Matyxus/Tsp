@@ -1,10 +1,19 @@
-import TSPLIB
 using Plots
 
+"""
+    plot_convergence(log_name::String, existing_plot::Union{Plots.Plot{Plots.GRBackend}, Nothing} = nothing)::Union{Plots.Plot{Plots.GRBackend}, Nothing}
 
-# Plots convergence of method, uses log name as label
+    Plots the algorithm run, where X axis corresponds to the number of iterations, Y to the tour length achieved.
+    If given multiple 'log_names', plots all into one plot.
+
+# Arguments
+- `log_name::String`: name of result/log file
+- `existing_plot::Union{Plots.Plot{Plots.GRBackend}, Nothing} = nothing`: plot of previous result/log file
+
+`Returns` Plot of algorithm run, nothing if erorr occurred
+"""
 function plot_convergence(log_name::String, existing_plot::Union{Plots.Plot{Plots.GRBackend}, Nothing} = nothing)::Union{Plots.Plot{Plots.GRBackend}, Nothing}
-    println("Loading log(s): $(log_name)")
+    println("Loading log: $(log_name) ...")
     if !check_log(log_name)
         return nothing
     end
@@ -28,8 +37,7 @@ function plot_convergence(log_name::String, existing_plot::Union{Plots.Plot{Plot
     )
 end
 
-
-# Plots convergence of methods, uses log names as labels
+# Plots convergence of multiple methods
 function plot_convergence(log_names::Vector{String})::Union{Plots.Plot{Plots.GRBackend}, Nothing}
     println("Loading logs: $(log_names)")
     if !all(check_log.(log_names))
@@ -51,7 +59,17 @@ function plot_convergence(log_names::Vector{String})::Union{Plots.Plot{Plots.GRB
     return p1
 end
 
-# Plots the best found solution with distance
+
+"""
+    function plot_solution(log_name::String)::Union{Plots.Plot{Plots.GRBackend}, Nothing}
+
+    Plots the best tour (connection between cities) of given result/log file.
+
+# Arguments
+- `log_name::String`: name of result/log file
+
+`Returns` the plot of cities connecitons, nothing if error occurred
+"""
 function plot_solution(log_name::String)::Union{Plots.Plot{Plots.GRBackend}, Nothing}
     println("Plotting solution of log: $(log_name)")
     if !check_log(log_name)
@@ -61,8 +79,19 @@ function plot_solution(log_name::String)::Union{Plots.Plot{Plots.GRBackend}, Not
     return plot_tour(log_config["additional_info"]["problem"], Vector{Int64}(log_config["data"][begin]["sequence"]))
 end
 
-# Plots tour on given problem
-function plot_tour(problem::Union{TSPLIB.TSP, String}, tour::Vector{Int64})::Union{Plots.Plot{Plots.GRBackend}, Nothing}
+
+"""
+    function plot_tour(problem::Union{TSP, String}, tour::Vector{Int64})::Union{Plots.Plot{Plots.GRBackend}, Nothing}
+
+    Plots the given tour (connection between cities).
+
+# Arguments
+- `problem::Union{TSP, String}`: name of the TSP problem or its structure
+- `tour::Vector{Int64}`: tour over cities (must be given as city indexes [1, ...., N])
+
+`Returns` the plot of cities connecitons, nothing if error occurred
+"""
+function plot_tour(problem::Union{TSP, String}, tour::Vector{Int64})::Union{Plots.Plot{Plots.GRBackend}, Nothing}
     # Convert to TSP struct
     if isa(problem, String)
         problem = load_problem(problem)
@@ -92,13 +121,24 @@ function plot_tour(problem::Union{TSPLIB.TSP, String}, tour::Vector{Int64})::Uni
 end
 
 # Saves plot as image
+"""
+    save_plot(fig::Plots.Plot{Plots.GRBackend}, file_path::String)
+
+    Saves the given plot in the given file (PNG).
+
+# Arguments
+- `fig::Plots.Plot{Plots.GRBackend}`: plot to be saved
+- `file_path::String`: path to the file
+
+`Returns` nothing
+"""
 function save_plot(fig::Plots.Plot{Plots.GRBackend}, file_path::String)
     return savefig(fig, file_path)
 end
 
 
 # ----------------------------------------------------- Utils -----------------------------------------------------
-
+# Checks if the logs strucure is correctly given
 function check_log(log_name::String)::Bool
     log_config::Union{Dict, Nothing} = load_log(log_name)
     if isnothing(log_config)

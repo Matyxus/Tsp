@@ -3,13 +3,24 @@ using GLMakie
 mutable struct MyGraphics
     sliders::Dict{String, Union{Int64, Float64}} # Slider buttons (mapping label to value)
     buttons::Dict{String, Bool} # Buttons (mapping label to on/off bool)
-    axis::Any  # Axis containing current best found cities sequence
+    axis::Makie.Axis  # Axis containing current best found cities
     lines::Union{Any, Nothing}  # Lines containing current best found cities sequence
-    best_axis::Any # Axis containing overall best found cities sequence
+    best_axis::Makie.Axis # Axis containing overall best found cities
     best_lines::Union{Any, Nothing} # Lines containing overall best found cities sequence
-    info_label_values::Dict{String, Any}    # Info labels containing information about current & overall best found cities sequence
+    info_label_values::Dict{String, Any}  # Info labels containing information about current & overall best found cities sequence
 end
 
+"""
+    GUI(solver::Solver)::GUI
+
+    Creates structure holding screen of GUI and pointers to button and sliders
+    mapping (name -> value), which get update on button/slider change.
+
+# Arguments
+- `solver::Solver`: current problem solver
+
+`Returns` Structure representing GUI.
+"""
 mutable struct GUI
     graphics::MyGraphics
     screen::Any # The current screen
@@ -39,6 +50,7 @@ function GUI(solver::Solver)::GUI
     for i in eachindex(BUTTON_LABELS)
         on(button_objects[i].clicks) do click
             buttons[BUTTON_LABELS[i]] = true
+            # Reset sliders to their default values
             if BUTTON_LABELS[i] == "Default"
                 set_slider_default_values(slider_values, slider_objects)
             end
@@ -52,7 +64,7 @@ function GUI(solver::Solver)::GUI
 end
 
 # ---------------------------- Init GUI -----------------------------
-
+# Initializes main window of GUI
 function init_figure(params::Dict{String, Any}, problem_name::String)::Makie.Figure
     set_theme!(theme_dark())
     resolution::Tuple = !check_gui(params) ? (WIDTH, HEIGHT) : (params["gui"]["width"], params["gui"]["height"])
@@ -62,6 +74,7 @@ function init_figure(params::Dict{String, Any}, problem_name::String)::Makie.Fig
     return figure
 end
 
+# Initializes axis, on which we display connection between cities
 function init_axis(solver::Solver, axis_grid::Makie.GridLayout, best_axis_grid::Makie.GridLayout)::Tuple{Makie.Axis, Makie.Axis}
     # ---------------------- City Coordinates -----------------------
     x_coords = get_tsp(solver.alg).nodes[:, 1]
@@ -84,6 +97,7 @@ function init_axis(solver::Solver, axis_grid::Makie.GridLayout, best_axis_grid::
     return axis, best_axis
 end
 
+# Initializes sliders in GUI
 function init_sliders(solver::Solver, slider_grid::Makie.GridLayout)::Tuple{Dict{String, Union{Int, Float64}}, Vector{Makie.Slider}}
     # Sliders specific to algorithm
     sliders_array::Vector{Any} = []
@@ -105,13 +119,13 @@ function init_sliders(solver::Solver, slider_grid::Makie.GridLayout)::Tuple{Dict
     slider_grid_object::Makie.SliderGrid = SliderGrid(
         slider_grid[1, 1],
         # Slider for the amount of sleeping time between rendering
-        (label = "Step interval", range = min_sleep:1:1000, startvalue=150, format = x -> string(x, " ms")),
+        (label = "Step interval", range = min_sleep:1:1000, startvalue=SLEEP_TIME, format = x -> string(x, " ms")),
         sliders_array...
     )
     slider_objects = slider_grid_object.sliders
     slider_observables::Vector{Observable} = [s.value for s in slider_objects]
     slider_labels::Vector{String} = append!(["Step interval"], collect(keys(get_alg_sliders(solver.alg))))
-    sliders = Dict{String, Union{Int64, Float64}}(slider_labels .=> [[150]; [val[end] for val in values(get_alg_sliders(solver.alg))]])
+    sliders = Dict{String, Union{Int64, Float64}}(slider_labels .=> [[SLEEP_TIME]; [val[end] for val in values(get_alg_sliders(solver.alg))]])
     # -------------------- Slider functionality ---------------------
     for i in eachindex(slider_labels)
         on(slider_observables[i]) do value
@@ -121,6 +135,7 @@ function init_sliders(solver::Solver, slider_grid::Makie.GridLayout)::Tuple{Dict
     return sliders, slider_objects
 end
 
+# Initializes buttons, sets all as being not pressed
 function init_buttons(button_grid::Makie.GridLayout)::Tuple{Dict{String, Bool}, Vector{Makie.Button}}
     button_objects = [
         Button(button_grid[1, index], label = label)
@@ -132,6 +147,7 @@ function init_buttons(button_grid::Makie.GridLayout)::Tuple{Dict{String, Bool}, 
     return buttons, button_objects
 end
 
+# Initializes lables as text on screen 
 function init_labels(best_label_grid::Makie.GridLayout)::Dict{String, Observable}
     label_values = Observable.(LABEL_STARTING_VALUES)
     info_labels = [
@@ -171,16 +187,8 @@ function set_button_value(gui::GUI, button_label::String, on::Bool = false)::Not
     return
 end
 
-# Sets all buttons as not pressed
-function initialize_button_values(gui::GUI)::Nothing
-    gui.graphics.buttons = Dict{String, Bool}(
-        BUTTON_LABELS .=> falses(length(BUTTON_LABELS))
-    )
-    return
-end
-
 # ---------------------- Button functionality -----------------------
-
+# Sets slider to their initial values (functionality from button 'Default')
 function set_slider_default_values(default_sliders::Vector{Union{Float64, Int64}}, sliders::Vector{Makie.Slider})
     for (i, value) in enumerate(default_sliders)
         set_close_to!(sliders[i], value)
@@ -188,7 +196,7 @@ function set_slider_default_values(default_sliders::Vector{Union{Float64, Int64}
 end
 
 # --------------------------- Update GUI ----------------------------
-
+# Updates connections between cities
 function update_route(axis::Makie.Axis, lines::Union{Makie.Lines, Nothing}, x_coords::Vector{ <: Real}, y_coords::Vector{ <: Real})
     if !isnothing(lines)
         delete!(axis.scene, lines)
@@ -196,11 +204,24 @@ function update_route(axis::Makie.Axis, lines::Union{Makie.Lines, Nothing}, x_co
     return lines!(axis, x_coords, y_coords, color = :green)
 end
 
+"""
+    update_gui(gui::GUI, solver::Solver, current::Representation)::Nothing
+
+    Updates current and best connection between cities, if received
+    new solution. Updates text on screen.
+
+# Arguments
+- `gui::GUI`: current struct representing GUI
+- `solver::Solver`: current problem solver
+- `current::Representation`: current solution
+
+`Returns` Nothing
+"""
 function update_gui(gui::GUI, solver::Solver, current::Representation)::Nothing
     best_solution::Union{Tuple{Int64, Float64, Vector{Int64}}, Nothing} = get_best(solver.log)
 
     tour::Vector{Int64} = to_sequence(current)
-    push!(tour, tour[begin])  # Add last city for connection
+    push!(tour, tour[begin])  # Add last city for connection between starting city.
     positions::Matrix = get_tsp(solver.alg).nodes[tour, :]
     pop!(tour) # Remove last added city
     x_coords = positions[:, 1]
@@ -227,12 +248,12 @@ function check_gui(config::Dict)::Bool
         return false
     elseif !check_key(config["gui"], "width", Int64)
         return false
-    elseif 0 >= config["gui"]["width"]
+    elseif 0 <= config["gui"]["width"]
         println("Width of gui has to be grater than 0, got: $(config["gui"]["width"])")
         return false
     elseif !check_key(config["gui"], "height", Int64)
         return false
-    elseif 0 >= config["gui"]["height"]
+    elseif 0 <= config["gui"]["height"]
         println("Height of gui has to be grater than 0, got: $(config["gui"]["height"])")
         return false
     end

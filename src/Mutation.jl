@@ -1,6 +1,17 @@
 # -------------------------------- Swap -------------------------------- 
 
-# Swap mutation
+"""
+    swap_city!(repr::Sequence, prob::Float64 = 0.1)::Nothing
+
+    Swaps cities by randomly choosing two indexes, if triggered (random number is 
+    larger then 'prob' parameter). Works similary for InverseSequence representation.
+
+# Arguments
+- `repr::Sequence`: the current representation of solution
+- `prob::Float64 = 0.1`: the chance of operator being triggered
+
+`Returns` nothing, operator operates in-place
+"""
 function swap_city!(repr::Sequence, prob::Float64 = 0.1)::Nothing
     if rand() > prob
         return
@@ -24,7 +35,18 @@ end
 
 # -------------------------------- Rsm -------------------------------- 
 
-# RSM mutation
+"""
+    reverse_subsequence!(repr::Sequence, prob::Float64 = 0.1)::Nothing
+
+    Reverses subsequence of cities by randomly chosing two indexes, if triggered (random number is 
+    larger then 'prob' parameter). Works similary for InverseSequence representation.
+
+# Arguments
+- `repr::Sequence`: the current representation of solution
+- `prob::Float64 = 0.1`: the chance of operator being triggered
+
+`Returns` nothing, operator operates in-place
+"""
 function reverse_subsequence!(repr::Sequence, prob::Float64 = 0.1)::Nothing
     if rand() > prob
         return
@@ -35,7 +57,6 @@ function reverse_subsequence!(repr::Sequence, prob::Float64 = 0.1)::Nothing
     return
 end
 
-# RSM mutation
 function reverse_subsequence!(repr::InverseSequence, prob::Float64 = 0.1)::Nothing
     if rand() > prob
         return
@@ -51,7 +72,20 @@ end
 
 # -------------------------------- Psm -------------------------------- 
 
-# PSM mutation
+"""
+    partial_shuffle!(repr::Sequence, prob::Float64 = 0.1)::Nothing
+
+    Iterates over cities in permutation, randomly decides (with probabilty 0.1%)
+    to swap the current city with another (randomly chosen) if triggered (random number is 
+    larger then 'prob' parameter). Works similary for InverseSequence representation.
+
+# Arguments
+- `repr::Sequence`: the current representation of solution
+- `prob::Float64 = 0.1`: the chance of operator being triggered
+- `swap_chance::Float64 = 0.1`: the chance of swapping cities
+
+`Returns` nothing, operator operates in-place
+"""
 function partial_shuffle!(repr::Sequence, prob::Float64 = 0.1, swap_chance::Float64 = 0.1)::Nothing
     if rand() > prob
         return
@@ -66,7 +100,6 @@ function partial_shuffle!(repr::Sequence, prob::Float64 = 0.1, swap_chance::Floa
     return
 end
 
-# PSM mutation
 function partial_shuffle!(repr::InverseSequence, prob::Float64 = 0.1, swap_chance::Float64 = 0.1)::Nothing
     if rand() > prob
         return
@@ -85,7 +118,7 @@ function partial_shuffle!(repr::InverseSequence, prob::Float64 = 0.1, swap_chanc
 end
 
 # --------------------------- Utils --------------------------- 
-
+# Checks the mutation operator in config file, if it was given correctly
 function check_mutation(params::Dict)::Bool
     # Check key existence and type
     if !check_key(params, "mutation", Dict)
@@ -106,13 +139,10 @@ function check_mutation(params::Dict)::Bool
     return true
 end
 
+# Mapping of mutation name to function
 MUTATION_MAP::Dict{String, Function} = Dict{String, Function}(
     "swap" => swap_city!,
     "rsm" => reverse_subsequence!,
     "psm" => partial_shuffle!
 )
-
-export swap_city!, reverse_subsequence!, partial_shuffle!
-export check_mutation, MUTATION_MAP
-
 

@@ -73,4 +73,5 @@ const WIDTH::Int64 = 1280
 const HEIGHT::Int64 = 800
 const AXIS_OFFSET::Int64 = 2
 const TEXT_OFFSET::Float64 = 0.1
+const SLEEP_TIME::Int64 = 150
 

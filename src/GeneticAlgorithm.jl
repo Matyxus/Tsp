@@ -4,7 +4,7 @@ import Base.Threads: nthreads
 mutable struct GeneticAlgorithm{T} <: EvolutionaryAlgorithm{T}
     # Setting
     params::Dict
-    tsp::TSPLIB.TSP
+    tsp::TSP
     representation::Type{T}
     # Functions
     mutation::Function
@@ -14,25 +14,20 @@ mutable struct GeneticAlgorithm{T} <: EvolutionaryAlgorithm{T}
     children::Vector{T}
 
     function GeneticAlgorithm(
-        params::Dict, tsp::TSPLIB.TSP, 
+        params::Dict, tsp::TSP, 
         repr::Type{T}, mutation::Function,
         crossover::Function, initializer::Function = random_init
             ) where {T <: Representation}
 
-        println("Initializing EA: 'GeneticAlgorithm' with params: $(params)")
-        println("tsp: $(tsp.name), representation: $(nameof(repr)), mutation: $(nameof(mutation))")
-        println("crossover: $(nameof(crossover)), initializer: $(nameof(initializer))")
+        println("Initializing 'GeneticAlgorithm' ...")
+        # println("params: $(params), tsp: $(tsp.name), representation: $(nameof(repr)), mutation: $(nameof(mutation))")
+        # println("crossover: $(nameof(crossover)), initializer: $(nameof(initializer))")
         new{T}(params, tsp, repr, mutation, crossover, initializer, [])
     end
 end
 
-GeneticAlgorithm(params::Dict, tsp::TSPLIB.TSP) = GeneticAlgorithm(params, tsp, Sequence, swap_city!, order_crossover)
-GeneticAlgorithm(params::Dict, tsp::TSPLIB.TSP, repr::Type{T}) where {T <: Representation} = GeneticAlgorithm(params, tsp, repr, swap_city!, order_crossover)
 
-
-function initialize(::Type{GeneticAlgorithm}, params::Dict, tsp::TSPLIB.TSP)::Union{Nothing, GeneticAlgorithm}
-    @assert !isnothing(tsp)
-    @assert !isnothing(params)
+function initialize(::Type{GeneticAlgorithm}, params::Dict, tsp::TSP)::Union{Nothing, GeneticAlgorithm}
     # Check given parameters
     if !check_algorithm(params)
         return nothing
@@ -43,7 +38,6 @@ function initialize(::Type{GeneticAlgorithm}, params::Dict, tsp::TSPLIB.TSP)::Un
     elseif !check_crossover(params["params"], params["representation"])
         return nothing
     end
-
 
     return GeneticAlgorithm(
         params["params"], tsp, 
@@ -72,37 +66,30 @@ function step(algorithm::GeneticAlgorithm)::Union{Representation, Nothing}
         if elite_index > 0
             append!(new_children, algorithm.children[1:elite_index])
         end
-        # ---------- Cross over + Mutation + Route Length ----------
+        # ---------- Cross over + Mutation + Fitness ----------
         # Total number of crossovers needed to fill population (each crossover produces two children)
         num_x_overs::Int64 = ceil(Int64, (algorithm.params["population"] - elite_index) / 2)
         if algorithm.params["threads"] > 1
-            # println("Performing parallel_step, x_overs: $(num_x_overs)")
-            # println("Elite index: $(elite_index)")
             append!(new_children, parallel_step(algorithm, num_x_overs))
-            # println("Generated: $(length(new_children))")
         else
             append!(new_children, single_step(algorithm, num_x_overs))
         end
         # Check number of children (crossover could have added 1 more)
-        @assert length(new_children) >= algorithm.params["population"]
-        new_children = new_children[1:algorithm.params["population"]]
-        # ---------- Result ----------
-        algorithm.children = new_children
+        # @assert length(new_children) >= algorithm.params["population"]
+        algorithm.children = new_children[1:algorithm.params["population"]]
     else # Initialize population
         println("Initializing: $(algorithm.params["population"]) children ...")
         algorithm.children = algorithm.representation.([algorithm.initializer(algorithm.tsp) for _ in 1:algorithm.params["population"]])
         set_route_length.(algorithm.children, Ref(algorithm.tsp))
     end
-    # Sort children based on distance
+    # Sort children based on fitness (tour length)
     sort!(algorithm.children, by = child -> distance(child))
     return algorithm.children[begin]
 end
 
-# Paralelle version of crossover and mutation operators,
-# have to be careful about operating on the same objects (i.e.), cannot perform 
-# mutation 'swap_city' in parallel on child, if such child is there more than once
+# Paralelle version of crossover, mutation and fitness operators
 function parallel_step(algorithm::GeneticAlgorithm, num_xovers::Int64)::Vector{Representation}
-    @assert 1 < algorithm.params["threads"] <= nthreads()
+    # @assert 1 < algorithm.params["threads"] <= nthreads()
     # ---------- Cross over ----------
     # Initialize arrays for each thread
     accumulator::Vector{Vector{Representation}} = [[] for _ in 1:nthreads()]
@@ -124,6 +111,7 @@ function parallel_step(algorithm::GeneticAlgorithm, num_xovers::Int64)::Vector{R
     return collect(Base.Iterators.flatten(accumulator))
 end
 
+# Single threaded version of crossover, mutation and fitness operators
 function single_step(algorithm::GeneticAlgorithm, num_xovers::Int64)::Vector{Representation}
     # ---------- Cross over ----------
     accumulator::Vector{Representation} = []
@@ -170,18 +158,20 @@ function check_params(::Type{GeneticAlgorithm}, params::Dict)::Bool
     return check_init(params)
 end
 
+# Function which checkes the number of threads, then sets them equal to the number of 
+# threads the enviroment was started with.
 function check_threads(params::Dict)::Bool
     # Check threads
     if haskey(params, "threads")
         if !isa(params["threads"], Int64)
             println("Parameter threads has to be Int64, got: $(typeof(params["threads"]))")
             return false
-        elseif !(1 <= params["threads"] <= nthreads())
+        elseif !(0 <= params["threads"] <= nthreads())
             println("Invalid number of threads, number must be between: <1, $(nthreads())>, got: $(params["threads"]) !")
-            println("To change number of threads, run julia with options: '--threads NUM'")
+            println("To change number of threads, run julia with options: '--threads=NUM'")
         end
     end
-    # Set threads to 1
+    # Set threads to the enviroment threads
     println("Defaulting to enviroment number of threads: $(nthreads()) ....")
     params["threads"] = nthreads()
     return true
@@ -191,14 +181,16 @@ is_running(::GeneticAlgorithm)::Bool = true
 
 # ------------------------ GUI ------------------------
 
+# Silders for GeneticAlgorithm parameters
 get_alg_sliders(alg::GeneticAlgorithm)::Dict = Dict(
-    # slider name : [min, max, step, current]
+    # slider name : [min, max, step, current = default]
     "population" => [0, 100, 1, alg.params["population"]],
     "crossover" => [0, 1, 0.001, alg.params["crossover"]["chance"]], # Crosover chance
     "elitism" => [0, 1, 0.001, alg.params["elitism"]],
     "mutation" => [0, 1, 0.001, alg.params["crossover"]["chance"]] # Mutation chance
 )
 
+# Update of parameters from GUI
 function update_params(alg::GeneticAlgorithm, params::Dict{String, Union{Int64, Float64}})::Nothing
     alg.params["population"] = params["population"]
     alg.params["elitism"] = params["elitism"]

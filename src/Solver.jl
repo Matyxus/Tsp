@@ -23,14 +23,14 @@ end
 
 function Solver(config::Union{Dict, String}, problem::String)::Union{Solver, Nothing}
     println("Initializing solver for problem: $(problem), processing configuration file ...")
-    config::Dict = isa(config, Dict) ? config : load_config(config)
+    config::Union{Dict, Nothing} = isa(config, Dict) ? config : load_config(config)
     # Failed to load
     if isnothing(config) || isempty(config)
         println("Invalid configuration file!")
         return nothing
     end
     # Load TSP
-    tsp::Union{TSPLIB.TSP, Nothing} = intialize_problem(config, problem)
+    tsp::Union{TSP, Nothing} = intialize_problem(config, problem)
     if isnothing(tsp)
         return nothing
     end
@@ -45,7 +45,7 @@ end
 # ----------------------------- Init functions ----------------------------- 
 
 # Load the TSP problem, while checing 'settings' in configuration file
-function intialize_problem(config::Dict, problem::String)::Union{TSPLIB.TSP, Nothing}
+function intialize_problem(config::Dict, problem::String)::Union{TSP, Nothing}
     # Check
     if !check_settings(config)
         return nothing
@@ -55,7 +55,7 @@ function intialize_problem(config::Dict, problem::String)::Union{TSPLIB.TSP, Not
 end
 
 # Initializes the given algorithm from configuration
-function intialize_algorithm(config::Dict, tsp::TSPLIB.TSP)::Union{Nothing, Alg}
+function intialize_algorithm(config::Dict, tsp::TSP)::Union{Alg, Nothing}
     # Check
     if !check_key(config, "algorithm", Dict)
         return nothing
@@ -112,7 +112,7 @@ function prepare_data(solver::Solver, run_time::Float64, name::String)::Dict
             "run_time" => round(run_time; digits=3),
             "num_iter" => solver.iteration,
             "problem" => solver.alg.tsp.name,
-            "name" => split(name, SEP)[end],
+            "name" => split(name, SEP)[end], # Split file name, if its directory path
             "date" => format(now(), "Y_m_d H_M_S")
         ),
         "input_config" => solver.config

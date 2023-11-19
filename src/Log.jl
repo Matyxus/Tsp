@@ -37,7 +37,7 @@ get_best(log::Log)::Union{Tuple{Int64, Float64, Vector{Int64}}, Nothing} = (leng
 """
     save_log(file_name::String, data::Dict, log::Log)::Bool
 
-    Creates JSON file inside data\\logs directory.
+    Creates JSON file inside 'data/logs' directory.
 
 # Arguments
 - `file_name::String`: name of file solution will be saved in
@@ -47,7 +47,7 @@ get_best(log::Log)::Union{Tuple{Int64, Float64, Vector{Int64}}, Nothing} = (leng
 `Returns` true on success, false otherwise
 """
 function save_log(file_name::String, data::Dict, log::Log)::Bool
-    # Save results, from best to worst
+    # Save results, from best to worst (so that best one can be seen immediately)
     data["data"] = [
         Dict(
             "iteration" => solution[1],
@@ -74,4 +74,3 @@ function save_log(file_name::String, data::Dict, log::Log)::Bool
     return true 
 end
 
-export add_result

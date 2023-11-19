@@ -3,7 +3,7 @@ import TSPLIB
 mutable struct SimulatedAnnealing{T} <: LocalSearch{T}
     # Settings
     params::Dict
-    tsp::TSPLIB.TSP
+    tsp::TSP
     representation::Type{T}
     # Functions
     perturbation::Function
@@ -12,24 +12,22 @@ mutable struct SimulatedAnnealing{T} <: LocalSearch{T}
     solution::Union{T, Nothing}
 
     function SimulatedAnnealing(
-        params::Dict, tsp::TSPLIB.TSP, 
+        params::Dict, tsp::TSP, 
         repr::Type{T}, perturbation::Function,
         initializer::Function = random_init
             ) where {T <: Representation}
 
-        println("Initializing LS: 'SimulatedAnnealing' with params: $(params)")
-        println("tsp: $(tsp.name), representation: $(nameof(repr))")
-        println("perturbation: $(nameof(perturbation)), initializer: $(nameof(initializer))")
+        println("Initializing LS: 'SimulatedAnnealing' ...")
+        # println("params: $(params), tsp: $(tsp.name), representation: $(nameof(repr))")
+        # println("perturbation: $(nameof(perturbation)), initializer: $(nameof(initializer))")
         new{T}(params, tsp, repr, perturbation, initializer, nothing)
     end
 end
 
-SimulatedAnnealing(params::Dict, tsp::TSPLIB.TSP) = SimulatedAnnealing(params, tsp, Sequence, swap_city!)
-SimulatedAnnealing(params::Dict, tsp::TSPLIB.TSP, repr::Type{T}) where {T <: Representation} = SimulatedAnnealing(params, tsp, repr, swap_city!)
+SimulatedAnnealing(params::Dict, tsp::TSP) = SimulatedAnnealing(params, tsp, Sequence, swap_city!)
+SimulatedAnnealing(params::Dict, tsp::TSP, repr::Type{T}) where {T <: Representation} = SimulatedAnnealing(params, tsp, repr, swap_city!)
 
-function initialize(::Type{SimulatedAnnealing}, params::Dict, tsp::TSPLIB.TSP)::Union{Nothing, SimulatedAnnealing}
-    @assert !isnothing(tsp)
-    @assert !isnothing(params)
+function initialize(::Type{SimulatedAnnealing}, params::Dict, tsp::TSP)::Union{Nothing, SimulatedAnnealing}
     # Check given parameters
     if !check_algorithm(params)
         return nothing
@@ -46,12 +44,9 @@ function initialize(::Type{SimulatedAnnealing}, params::Dict, tsp::TSPLIB.TSP)::
     )
 end
 
-
 function step(algorithm::SimulatedAnnealing)::Union{Representation, Nothing}
-    # println("Performing step function on SimulatedAnnealing")
     # Algorithm cannot run anymore
     if !is_running(algorithm)
-        # println("Parameter temperature has to be greater than 1, got: $(algorithm.params["temperature"])")
         return algorithm.solution
     elseif !isnothing(algorithm.solution)
         # Deep copy of previous
@@ -60,23 +55,35 @@ function step(algorithm::SimulatedAnnealing)::Union{Representation, Nothing}
         algorithm.perturbation(new_solution, 1.0)
         set_route_length(new_solution, algorithm.tsp)
         # Decide if new solution should be accepted
-        # println("Deciding if new solution should be accepted: $(distance(algorithm.solution)) vs  $(distance(new_solution))")
         if accept_probability(distance(algorithm.solution), distance(new_solution), algorithm.params["temperature"]) > rand()
             algorithm.solution = new_solution
-            # println("Accepting new")
         end
         # Update temperature
         algorithm.params["temperature"]  *= (1.0 - algorithm.params["cooling_rate"])
     else # Iteration 0 (Initialization)
         algorithm.solution = algorithm.representation(algorithm.initializer(algorithm.tsp))
         set_route_length(algorithm.solution, algorithm.tsp)
-        println("Initialized solution")
+        println("Initialized solution ...")
     end
     return algorithm.solution
 end
 
 # ----------------------------------------------------- Utils -----------------------------------------------------
 
+"""
+    function accept_probability(current_energy::Float64, new_energy::Float64, temperature::Float64)::Float64
+
+    Decides based on probabilty (unless new solution is better then best) if new solution
+    should be explored (the higher the temperature, the higher the exploration factor) even if
+    the new solution is not better.
+
+# Arguments
+- `current_energy::Float64`: best length of tour over cities
+- `new_energy::Float64`: current length of tour over cities
+- `temperature::Float64`: the current temperature parameter of algorithm
+
+`Returns` The probability of accepting solution
+"""
 function accept_probability(current_energy::Float64, new_energy::Float64, temperature::Float64)::Float64
     # Found better solution
     if (new_energy < current_energy)
@@ -86,7 +93,7 @@ function accept_probability(current_energy::Float64, new_energy::Float64, temper
     return exp((current_energy - new_energy) / temperature)
 end
 
-
+# Checks the configuration file parameters for SimulatedAnnealing
 function check_params(::Type{SimulatedAnnealing}, params::Dict)::Bool
     # Check temperature
     if !check_key(params, "temperature", Real)
@@ -114,22 +121,17 @@ is_running(algorithm::SimulatedAnnealing)::Bool = (algorithm.params["temperature
 
 # ------------------------ GUI ------------------------
 
-
+# Mapping of Sliders names  (SimulatedAnnealing parameters) to their values
 get_alg_sliders(alg::SimulatedAnnealing)::Dict = Dict(
     # slider name : [min, max, step, current]
     "cooling_rate" => [0.001, 0.999, 0.001, alg.params["cooling_rate"]],
     "temperature" => [0, 100000, 1000, alg.params["temperature"]]
 )
 
+# Update of parameters from GUI
 function update_params(alg::SimulatedAnnealing, params::Dict{String, Union{Int64, Float64}})::Nothing
     alg.params["cooling_rate"] = params["cooling_rate"]
     alg.params["temperature"] = params["temperature"]
     return
 end
-
-
-
-export SimulatedAnnealing
-
-
 
