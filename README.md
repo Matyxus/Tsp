@@ -42,7 +42,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This project is the implementation of first homework: https://cw.fel.cvut.cz/wiki/courses/a0m33eoa/start and <a href="#example">example</a> of how to use the project
+This project is the implementation of first homework: https://cw.fel.cvut.cz/wiki/courses/a0m33eoa/start and <a href="#usage">example</a> of how to use the project
 is provided.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -118,7 +118,7 @@ Function which is used to run the project is callo "main", it requires the follo
 1) config name: name of the configuration file defined in [tsp/data/config](https://github.com/Matyxus/Tsp/tree/main/data/config)
 2) problem name: name of the TSP problem, the ones in project are listed [here](https://github.com/matago/TSPLIB.jl/tree/master/data/TSPLIB95/tsp), otherwise downloaded TSP problem files can be put inside tsp/data/problems directory.
 3) log name: (optional, default empty), name of file in which we want to save the results. (Empty for no file), will be saved by default in: [tsp/data/logs](https://github.com/Matyxus/Tsp/tree/main/data/logs)
-4) gui: (optinal, default false) boolean value, if GUI should be used.
+4) gui: (optional, default false) boolean value, if GUI should be used.
 
 ### Example
 Configuration files contain information about the algorithms, these configuration files should not be modified (by adding, removing values from the JSON file), only names of certain parameters can be changed, for example:
