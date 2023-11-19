@@ -63,7 +63,7 @@ program was made for [Julia 1.9](https://julialang.org/).
 
 ### Installation
 
-Use [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/) to install project from GitHub, or download the project and activate the enviroment inside root, then it can be used similary.
+Use [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/) to install project from GitHub, or download the project and activate the enviroment inside root, then it can be used similary (Do not forget to install the required libraries or use "Pkg.initiaite()").
 ```julia
 (env) pkg> add https://github.com/Matyxus/Tsp
 ```
@@ -108,7 +108,7 @@ To use the project, run the following command:
 using Tsp
 config_name::String = "ga"
 problem_name::String = "att48"
-log_name::String = "result"
+log_name::String = "ga_seq_random_pmx_rsm"
 gui::Bool = false
 main(config_name, problem_name, log_name, gui)
 ```
@@ -163,7 +163,7 @@ There are two types of visualization provided for this work,
 first one being [static](https://github.com/Matyxus/Tsp/blob/main/src/Vizualization.jl), where we can visualize results of algorithms runs:
 ```julia
 using Tsp
-log_name::String = "result"
+log_name::String = "ga_seq_random_pmx_rsm"
 plot_solution(log_name)
 ```
 ![Tour image](images/git_img/result_tour.png)
@@ -187,7 +187,7 @@ with GUI:
 using Tsp
 config_name::String = "ga"
 problem_name::String = "att48"
-log_name::String = "result"
+log_name::String = "ga_seq_random_pmx_rsm"
 gui::Bool = true
 main(config_name, problem_name, log_name, gui)
 ```
