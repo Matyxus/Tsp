@@ -10,7 +10,7 @@ function main(config::String, problem::String, log_name::String = "", gui::Bool 
     success, run_time = gui ? vizualized_run(solver) : standard_run(solver)
     println("Finished successfully: $(success), run time: $(round(run_time; digits=3))(sec.)")
     if !isempty(log_name)
-        save_result(log_name, prepare_data(solver, run_time, log_name))
+        save_log(log_name, prepare_data(solver, run_time, log_name), solver.log)
     end
     return success
 end

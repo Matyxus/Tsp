@@ -104,10 +104,10 @@ end
 - `run_time::Float64`: total run time of algorithm
 - `name::String`: name of the configuration file
 
-`Returns` Dictionary contaning additional information about algorithm run.
+`Returns` Dictionary containing additional information about algorithm run.
 """
-function prepare_data(solver::Solver, run_time::Float64, name::String)::Dict
-    return Dict(
+function prepare_data(solver::Solver, run_time::Float64, name::String)::Dict{String, Any}
+    return Dict{String, Any}(
         "additional_info" => Dict(
             "run_time" => round(run_time; digits=3),
             "num_iter" => solver.iteration,

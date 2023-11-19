@@ -19,14 +19,14 @@ function plot_convergence(log_name::String, existing_plot::Union{Plots.Plot{Plot
     end
     log_config::Dict = load_log(log_name)
     if !isnothing(existing_plot)
-        return plot!(existing_plot,
+        return Plots.plot!(existing_plot,
             [data["iteration"] for data in log_config["data"]],
             [data["distance"] for data in log_config["data"]],
             label=log_config["additional_info"]["name"],
         )
     end
     # println("Problem: $(problem.name), solutions: $(length(log_config["data"][begin]["sequence"]))")
-    return plot(
+    return Plots.plot(
         # X, Y
         [data["iteration"] for data in log_config["data"]],
         [data["distance"] for data in log_config["data"]],
@@ -113,10 +113,10 @@ function plot_tour(problem::Union{TSP, String}, tour::Vector{Int64})::Union{Plot
     # Make first city also last, to have connection between them
     push!(tour, tour[begin])
     positions::Matrix = problem.nodes[tour, :]
-    p1 = plot(positions[:, 1], positions[:, 2]; marker=(:circle,5), legend=false)
+    p1 = Plots.plot(positions[:, 1], positions[:, 2]; marker=(:circle,5), legend=false)
     # Remove the appended city
     pop!(tour)
-    title!(p1, "Tour: $(problem.name), dist: $(floor(calculate_distance(tour, problem), digits=3))")
+    Plots.title!(p1, "Tour: $(problem.name), dist: $(floor(calculate_distance(tour, problem), digits=3))")
     return p1
 end
 
@@ -133,7 +133,7 @@ end
 `Returns` nothing
 """
 function save_plot(fig::Plots.Plot{Plots.GRBackend}, file_path::String)
-    return savefig(fig, file_path)
+    return Plots.savefig(fig, file_path)
 end
 
 

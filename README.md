@@ -67,6 +67,9 @@ Use [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/) to install project from 
 ```julia
 (env) pkg> add https://github.com/Matyxus/Tsp
 ```
+** Note: If we wish to run GeneticAlgorithm with multiple threads, start the
+julia interpreter with the option: "--threads=NUM".
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- Scenario -->
@@ -127,7 +130,7 @@ Configuration files contain information about the algorithms, these configuratio
         "seed": 42,
         "max_iter": 30000
     },
-    # This section defined the algorithm and its parameters
+    # This section defines the algorithm and its parameters
     "algorithm": {
         # Name of the algorithm we want to use
         "name": "SimulatedAnnealing",
@@ -146,7 +149,7 @@ Configuration files contain information about the algorithms, these configuratio
             }
         }
     },
-    # This is optinal setting, it is not needed in the configuration file,
+    # This is optional setting, it is not needed in the configuration file,
     # GUI has default values (1280, 800).
     "gui" : {
         "width": 1920,
@@ -163,20 +166,20 @@ using Tsp
 log_name::String = "result"
 plot_solution(log_name)
 ```
+![Tour image](images/git_img/result_tour.png)
+
 Or we can visualize how algorithms performed over the entire run: 
 ```julia
 using Tsp
-log_name::String = "result"
-plot_convergence(log_name)
-
+# (If we use vector of strings, they must be on the same TSP problem!)
+# Name of displayed algorithm in legends corresponds to log file name.
+log_name::String = "ga_seq_random_pmx_rsm"
+p1 = plot_convergence(log_names)
+# If we wish to save the image
+save_plot(p1, "result")
 ```
 
-```julia
-using Tsp
-# (If we use multiple, they must be on the same TSP problem)
-log_names::Vector{String} = ["result", "result2"]
-plot_convergence(log_names)
-```
+![Convergence image](images/git_img/result.png)
 
 Second one being [dynamic](https://github.com/Matyxus/Tsp/blob/main/src/Gui.jl)
 with GUI:
@@ -188,5 +191,7 @@ log_name::String = "result"
 gui::Bool = true
 main(config_name, problem_name, log_name, gui)
 ```
+** Note: Tour on the left side represents the current tour, if GeneticAlgorithm has elitism that when multiplied with population is non-zero, then this will be the same tour as shown on the right side (which is the overall best one). Step interval slider is the amount of time between iterations (in miliseconds).
+![GUI image](images/git_img/gui_image_later.PNG)
 
 <p align="right">(<a href="#top">back to top</a>)</p>

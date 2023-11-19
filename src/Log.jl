@@ -46,7 +46,7 @@ get_best(log::Log)::Union{Tuple{Int64, Float64, Vector{Int64}}, Nothing} = (leng
 
 `Returns` true on success, false otherwise
 """
-function save_log(file_name::String, data::Dict, log::Log)::Bool
+function save_log(file_name::String, data::Dict{String, Any}, log::Log)::Bool
     # Save results, from best to worst (so that best one can be seen immediately)
     data["data"] = [
         Dict(
