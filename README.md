@@ -63,7 +63,7 @@ program was made for [Julia 1.9](https://julialang.org/).
 
 ### Installation
 
-Use [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/) to install project from GitHub.
+Use [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/) to install project from GitHub, or download the project and activate the enviroment inside root, then it can be used similary.
 ```julia
 (env) pkg> add https://github.com/Matyxus/Tsp
 ```
@@ -117,7 +117,7 @@ main(config_name, problem_name, log_name, gui)
 Function which is used to run the project is callo "main", it requires the following arguments:
 1) config name: name of the configuration file defined in [tsp/data/config](https://github.com/Matyxus/Tsp/tree/main/data/config)
 2) problem name: name of the TSP problem, the ones in project are listed [here](https://github.com/matago/TSPLIB.jl/tree/master/data/TSPLIB95/tsp), otherwise downloaded TSP problem files can be put inside tsp/data/problems directory.
-3) log name: (optional, default empty), name of file in which we want to save the results. (Empty for no file), will be saved by default in: tsp/data/logs
+3) log name: (optional, default empty), name of file in which we want to save the results. (Empty for no file), will be saved by default in: [tsp/data/logs](https://github.com/Matyxus/Tsp/tree/main/data/logs)
 4) gui: (optinal, default false) boolean value, if GUI should be used.
 
 ### Example
